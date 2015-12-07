@@ -15,6 +15,7 @@ type PapiConnection struct {
 	endpoint   string
 	insecure   bool
 	username   string
+	group      string
 	password   string
 	httpClient *http.Client
 	VolumePath string
@@ -33,7 +34,7 @@ type Error struct {
 }
 
 // Create a new HTTP connection
-func New(endpoint string, insecure bool, username, password, volumePath string) (*PapiConnection, error) {
+func New(endpoint string, insecure bool, username, group, password, volumePath string) (*PapiConnection, error) {
 	if endpoint == "" || username == "" || password == "" {
 		return nil, errors.New("Missing endpoint, username, or password")
 	}
@@ -57,7 +58,7 @@ func New(endpoint string, insecure bool, username, password, volumePath string) 
 		client = &http.Client{}
 	}
 
-	return &PapiConnection{endpoint, insecure, username, password, client, volumePath}, nil
+	return &PapiConnection{endpoint, insecure, username, group, password, client, volumePath}, nil
 }
 
 func multimap(p map[string]string) url.Values {

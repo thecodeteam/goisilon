@@ -3,7 +3,6 @@ package goisilon
 import (
 	"os"
 	"strconv"
-	//	"strconv"
 
 	papi "github.com/emccode/goisilon/api/v1"
 )
@@ -20,6 +19,7 @@ func NewClient() (*Client, error) {
 		os.Getenv("GOISILON_ENDPOINT"),
 		insecure,
 		os.Getenv("GOISILON_USERNAME"),
+		os.Getenv("GOISILON_GROUP"),
 		os.Getenv("GOISILON_PASSWORD"),
 		os.Getenv("GOISILON_VOLUMEPATH"))
 }
@@ -27,9 +27,9 @@ func NewClient() (*Client, error) {
 func NewClientWithArgs(
 	endpoint string,
 	insecure bool,
-	username, password, volumePath string) (*Client, error) {
+	username, group, password, volumePath string) (*Client, error) {
 
-	api, err := papi.New(endpoint, insecure, username, password, volumePath)
+	api, err := papi.New(endpoint, insecure, username, group, password, volumePath)
 	if err != nil {
 		return nil, err
 	}

@@ -10,6 +10,7 @@ type Volume *papi.IsiVolume
 type VolumeExport struct {
 	Volume     Volume
 	ExportPath string
+	Clients    []string
 }
 
 //GetVolume returns a specific volume by name or ID
@@ -56,19 +57,19 @@ func (c *Client) DeleteVolume(name string) error {
 	return err
 }
 
-//Path returns the volume of a volume
+//Path returns the path to a volume
 func (c *Client) Path(name string) string {
 	return fmt.Sprintf("%s/%s", c.api.VolumePath, name)
 }
 
 //ExportVolume exports a volume
 func (c *Client) ExportVolume(name string) error {
-	return c.Export(c.Path(name))
+	return c.Export(name)
 }
 
-//DeleteVolume deletes a volume
+//UnexportVolume stops exporting a volume
 func (c *Client) UnexportVolume(name string) error {
-	return c.Unexport(c.Path(name))
+	return c.Unexport(name)
 }
 
 //GetVolumeExports return a list of volume exports
@@ -79,9 +80,11 @@ func (c *Client) GetVolumeExports() ([]*VolumeExport, error) {
 	}
 
 	exportPaths := make(map[string]bool)
+	exportClients := make(map[string]([]string))
 	for _, export := range exports {
 		for _, path := range export.Paths {
 			exportPaths[path] = true
+			exportClients[path] = export.Clients
 		}
 	}
 
@@ -96,6 +99,7 @@ func (c *Client) GetVolumeExports() ([]*VolumeExport, error) {
 			volumeExports = append(volumeExports, &VolumeExport{
 				Volume:     volume,
 				ExportPath: c.Path(volume.Name),
+				Clients:    exportClients[c.Path(volume.Name)],
 			})
 		}
 	}
