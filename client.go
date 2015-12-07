@@ -2,9 +2,10 @@ package goisilon
 
 import (
 	"os"
-//	"strconv"
+	"strconv"
+	//	"strconv"
 
-	papi "goisilon/api/v1"
+	papi "github.com/emccode/goisilon/api/v1"
 )
 
 type Client1 struct {
@@ -14,20 +15,21 @@ type Client1 struct {
 type Client Client1
 
 func NewClient() (*Client, error) {
-//	insecure, _ := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
+	insecure, _ := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
 	return NewClientWithArgs(
 		os.Getenv("GOISILON_ENDPOINT"),
-		false,
+		insecure,
 		os.Getenv("GOISILON_USERNAME"),
-		os.Getenv("GOISILON_PASSWORD"))
+		os.Getenv("GOISILON_PASSWORD"),
+		os.Getenv("GOISILON_VOLUMEPATH"))
 }
 
 func NewClientWithArgs(
 	endpoint string,
 	insecure bool,
-	username, password string) (*Client, error) {
+	username, password, volumePath string) (*Client, error) {
 
-	api, err := papi.New(endpoint, insecure, username, password)
+	api, err := papi.New(endpoint, insecure, username, password, volumePath)
 	if err != nil {
 		return nil, err
 	}

@@ -1,16 +1,18 @@
 package apiv1
 
 import (
+	"errors"
+	"fmt"
 	"os"
 	"strconv"
-	"fmt"
 )
 
 // TODO: Make the volume location configurable.
 const (
-	onefsVolumesPath = "/ifs/data/docker/volumes"
-	papiVolumesPath = "namespace/ifs/data/docker/volumes"
-	papiExportsPath = "platform/1/protocols/nfs/exports"
+	// onefsVolumesPath = "/ifs/data/docker/volumes"
+	papiNameSpacePath = "namespace"
+	papiVolumesPath   = "/ifs/volumes"
+	papiExportsPath   = "platform/1/protocols/nfs/exports"
 )
 
 var debug bool
@@ -23,104 +25,105 @@ func init() {
 }
 
 type IsiVolume struct {
-	Name string `json:"name"`
+	Name         string `json:"name"`
 	AttributeMap []struct {
-		Name string `json:"name"`
+		Name  string      `json:"name"`
 		Value interface{} `json:"value"`
-	}`json:"attrs"`	
+	} `json:"attrs"`
 }
 
 // Isi PAPI volume JSON structs
-type volumeName struct {
+type VolumeName struct {
 	Name string `json:"name"`
 }
 
 type getIsiVolumesResp struct {
-	Children []volumeName `json:"children"`
+	Children []*VolumeName `json:"children"`
 }
 
 // Isi PAPI Volume ACL JSON structs
-type ownership struct {
-	Id   string `json:"id"`
+type Ownership struct {
+	ID   string `json:"ID"`
 	Name string `json:"name"`
 	Type string `json:"type"`
 }
 
-type aclRequest struct {
-	Authoritative string    `json:"authoritative"`
-	Action        string    `json:"action"`
-	Owner         ownership `json:"owner"`
-	Group         ownership `json:"group"`
+type AclRequest struct {
+	Authoritative string     `json:"authoritative"`
+	Action        string     `json:"action"`
+	Owner         *Ownership `json:"owner"`
+	Group         *Ownership `json:"group"`
 }
 
 // Isi PAPI volume attributes JSON struct
 type getIsiVolumeAttributesResp struct {
 	AttributeMap []struct {
-		Name string `json:"name"`
+		Name  string      `json:"name"`
 		Value interface{} `json:"value"`
-	}`json:"attrs"`
+	} `json:"attrs"`
 }
 
 // Isi PAPI export path JSON struct
-type exportPathList struct {
+type ExportPathList struct {
 	Paths []string `json:"paths"`
 }
 
-// Isi PAPI export id JSON struct
+// Isi PAPI export ID JSON struct
 type postIsiExportResp struct {
-	Id int `json:"id"`
+	ID int `json:"ID"`
 }
 
 // Isi PAPI export attributes JSON structs
-type isiExport struct {
-	Id int `json:"id"`
+type IsiExport struct {
+	ID    int      `json:"ID"`
 	Paths []string `json:"paths"`
 }
 
 type getIsiExportsResp struct {
-	ExportList []isiExport `json:"exports"`
+	ExportList []*IsiExport `json:"exports"`
 }
 
 // Get a list of all docker volumes on the cluster
 // Note: All Docker Volumes are being stored in a single directory on the cluster.
 func (papi *PapiConnection) GetIsiVolumes() (resp *getIsiVolumesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volumes/
-	err = papi.query("GET", papiVolumesPath, "", nil, nil, &resp)
+	err = papi.query("GET", papi.nameSpacePath(),
+		"", nil, nil, &resp)
 	return resp, err
 }
 
 // Create a new docker volume on the cluster
 // Note: A Docker Volume is just a directory on the cluster
 func (papi *PapiConnection) CreateIsiVolume(name string) (resp *getIsiVolumesResp, err error) {
-	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/volume_name 
+	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/volume_name
 	//             x-isi-ifs-target-type: container
 	//             x-isi-ifs-access-control: public_read_write
-	//            
+	//
 	//             PUT https://1.2.3.4:8080/namespace/path/to/volumes/volume_name?acl
-	//             {authoritative: "acl", 
-	//              action: "update", 
-	//              owner: {id: "UID:65534", name: "nobody", type: "user"}, 
-	//              group: {id: "UID:65534", name: "nobody", type: "group"}
+	//             {authoritative: "acl",
+	//              action: "update",
+	//              owner: {ID: "UID:65534", name: "nobody", type: "user"},
+	//              group: {ID: "UID:65534", name: "nobody", type: "group"}
 	//             }
-	
+
 	headers := map[string]string{"x-isi-ifs-target-type": "container", "x-isi-ifs-access-control": "public_read_write"}
 	// TODO: This should be configurable
-	var data = aclRequest{
+	var data = &AclRequest{
 		"acl",
 		"update",
-		ownership{"UID:65534", "nobody", "user"},
-		ownership{"GID:65534", "nobody", "group"},
+		&Ownership{"UID:65534", "nobody", "user"},
+		&Ownership{"GID:65534", "nobody", "group"},
 	}
 
-    // create the volume
-	err = papi.queryWithHeaders("PUT", papiVolumesPath, name, nil, headers, nil, &resp)
+	// create the volume
+	err = papi.queryWithHeaders("PUT", papi.nameSpacePath(), name, nil, headers, nil, &resp)
 	if err != nil {
 		return resp, err
 	}
-	
+
 	// set the ownership of the volume
-	err = papi.query("PUT", papiVolumesPath, name, map[string]string{"acl": ""}, data, &resp)
-	
+	err = papi.query("PUT", papi.nameSpacePath(), name, map[string]string{"acl": ""}, data, &resp)
+
 	return resp, err
 }
 
@@ -128,7 +131,7 @@ func (papi *PapiConnection) CreateIsiVolume(name string) (resp *getIsiVolumesRes
 // Note: A Docker Volume is just a directory on the cluster
 func (papi *PapiConnection) GetIsiVolume(name string) (resp *getIsiVolumeAttributesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume/?metadata
-	err = papi.query("GET", papiVolumesPath, name, map[string]string{"metadata": ""}, nil, &resp)
+	err = papi.query("GET", papi.nameSpacePath(), name, map[string]string{"metadata": ""}, nil, &resp)
 	return resp, err
 }
 
@@ -137,55 +140,56 @@ func (papi *PapiConnection) GetIsiVolume(name string) (resp *getIsiVolumeAttribu
 func (papi *PapiConnection) DeleteIsiVolume(name string) (resp *getIsiVolumesResp, err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/namespace/path/to/volumes/volume_name
 
-	err = papi.queryWithHeaders("DELETE", papiVolumesPath, name, nil, nil, nil, &resp)
+	err = papi.queryWithHeaders("DELETE", papi.nameSpacePath(), name, nil, nil, nil, &resp)
 	return resp, err
 }
 
 // Enable an NFS export on the cluster to access the docker volumes.  Return the path to the export
 // so other processes can mount the docker volume directory
-func (papi *PapiConnection) Attach() (path string, err error) {	
-	// PAPI call: POST https://1.2.3.4:8080/platform/1/protocols/nfs/exports/ 
+func (papi *PapiConnection) Export(path string) (err error) {
+	// PAPI call: POST https://1.2.3.4:8080/platform/1/protocols/nfs/exports/
 	//            Content-Type: application/json
 	//            {paths: ["/path/to/volume"]}
-	
-	// see if the docker volumes export already exists
-	exportList, err := papi.GetIsiExports()
-	for _, export := range exportList.ExportList {
-		for _, path := range export.Paths {
-			if path == onefsVolumesPath {
-				// the export already exists, grab it's id and return it's path
-				exportID = export.Id
-				return path, nil
-			}
-		}
+
+	if path == "" {
+		return errors.New("no path set")
 	}
-	
-	// the docker volumes export doesn't exist yet, create it.
-	var data = exportPathList{Paths: []string{onefsVolumesPath}}
+
+	var data = &ExportPathList{Paths: []string{path}}
 	headers := map[string]string{"Content-Type": "application/json"}
 	var resp *postIsiExportResp
-	
+
 	err = papi.queryWithHeaders("POST", papiExportsPath, "", nil, headers, data, &resp)
 
 	if err != nil {
-		return "None", err
+		return err
 	}
-	exportID = resp.Id
-	
-	return data.Paths[0], err
-	
+
+	return nil
 }
 
 // Disable the NFS export on the cluster that points to the docker volumes directory.
-func (papi *PapiConnection) Detach() (err error) {
+func (papi *PapiConnection) Unexport(ID int) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/protocols/nfs/exports/23
 
-	exportPath := fmt.Sprintf("%s%d", papiExportsPath, exportID)
-	var resp postIsiExportResp 
-	
+	if ID == 0 {
+		return errors.New("no path ID set")
+	}
+
+	exportPath := fmt.Sprintf("%s/%d", papiExportsPath, ID)
+
+	var resp postIsiExportResp
 	err = papi.queryWithHeaders("DELETE", exportPath, "", nil, nil, nil, &resp)
 
-	return err	
+	return err
+}
+
+func (papi *PapiConnection) nameSpacePath() string {
+	return fmt.Sprintf("%s%s", papiNameSpacePath, papi.VolumePath)
+}
+
+func (papi *PapiConnection) exportsPath() string {
+	return fmt.Sprintf("%s%s", papiExportsPath, papi.VolumePath)
 }
 
 // Get a list of all exports on the cluster
@@ -197,4 +201,3 @@ func (papi *PapiConnection) GetIsiExports() (resp *getIsiExportsResp, err error)
 
 	return resp, err
 }
-
