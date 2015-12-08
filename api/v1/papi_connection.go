@@ -17,24 +17,31 @@ type PapiConnection struct {
 	username   string
 	password   string
 	httpClient *http.Client
+	VolumePath string
 }
 
 // Isi PAPI error JSON structs
 type PapiError struct {
-	Code string `json:"code"`
-	Field string `json:"field"`
+	Code    string `json:"code"`
+	Field   string `json:"field"`
 	Message string `json:"message"`
 }
 
 type Error struct {
 	StatusCode int
-	Err []PapiError `json:"errors"`
+	Err        []PapiError `json:"errors"`
 }
 
 // Create a new HTTP connection
-func New(endpoint string, insecure bool, username string, password string) (*PapiConnection, error) {
+func New(endpoint string, insecure bool, username, password, volumePath string) (*PapiConnection, error) {
 	if endpoint == "" || username == "" || password == "" {
 		return nil, errors.New("Missing endpoint, username, or password")
+	}
+
+	if volumePath == "" {
+		volumePath = papiVolumesPath
+	} else {
+		volumePath = fmt.Sprintf("%s%s", papiVolumesPath, volumePath)
 	}
 
 	var client *http.Client
@@ -50,7 +57,7 @@ func New(endpoint string, insecure bool, username string, password string) (*Pap
 		client = &http.Client{}
 	}
 
-	return &PapiConnection{endpoint, insecure, username, password, client}, nil
+	return &PapiConnection{endpoint, insecure, username, password, client, volumePath}, nil
 }
 
 func multimap(p map[string]string) url.Values {
@@ -61,7 +68,7 @@ func multimap(p map[string]string) url.Values {
 	return q
 }
 
-// Extract the error string from a received error message 
+// Extract the error string from a received error message
 func (err *Error) Error() string {
 	// I've only seen PAPI return a single error, but, technically, it can be a list
 	return err.Err[0].Message
@@ -82,15 +89,15 @@ func buildError(r *http.Response) error {
 }
 
 // Send an HTTP query to the cluster
-func (xms *PapiConnection) query(method string, path string, id string, 
+func (xms *PapiConnection) query(method string, path string, id string,
 	params map[string]string, body interface{}, resp interface{}) error {
-		
+
 	return xms.queryWithHeaders(method, path, id, params, nil, body, resp)
 }
 
-// Send an HTTP query that includes headers to the cluster 
-func (xms *PapiConnection) queryWithHeaders(method string, path string, id string, 
-	params map[string]string, headers map[string]string, body interface{}, 
+// Send an HTTP query that includes headers to the cluster
+func (xms *PapiConnection) queryWithHeaders(method string, path string, id string,
+	params map[string]string, headers map[string]string, body interface{},
 	resp interface{}) error {
 
 	// build the URI
@@ -111,9 +118,12 @@ func (xms *PapiConnection) queryWithHeaders(method string, path string, id strin
 		var bodyBytes []byte
 		bodyBytes, _ = json.Marshal(body)
 		byteBuffer.Write(bodyBytes)
-	} 
-	
+	}
+
 	req, err := http.NewRequest(method, endpoint, &byteBuffer)
+	if err != nil {
+		return err
+	}
 
 	// add headers to the request
 	if headers != nil {
@@ -124,7 +134,7 @@ func (xms *PapiConnection) queryWithHeaders(method string, path string, id strin
 
 	// set the username and password
 	req.SetBasicAuth(xms.username, xms.password)
-	
+
 	// send the request
 	r, err := xms.httpClient.Do(req)
 	if err != nil {
