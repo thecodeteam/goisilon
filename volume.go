@@ -12,9 +12,6 @@ type VolumeExport struct {
 	ExportPath string
 }
 
-//type NewVolumeOptions papi.PostVolumesReq
-//type NewVolumeResult *papi.PostVolumesResp
-
 //GetVolume returns a specific volume by name or ID
 func (c *Client) GetVolume(id string, name string) (Volume, error) {
 	if id != "" {
@@ -59,10 +56,12 @@ func (c *Client) DeleteVolume(name string) error {
 	return err
 }
 
+//Path returns the volume of a volume
 func (c *Client) Path(name string) string {
 	return fmt.Sprintf("%s/%s", c.api.VolumePath, name)
 }
 
+//ExportVolume exports a volume
 func (c *Client) ExportVolume(name string) error {
 	return c.Export(c.Path(name))
 }
@@ -71,6 +70,8 @@ func (c *Client) ExportVolume(name string) error {
 func (c *Client) UnexportVolume(name string) error {
 	return c.Unexport(c.Path(name))
 }
+
+//GetVolumeExports return a list of volume exports
 func (c *Client) GetVolumeExports() ([]*VolumeExport, error) {
 	exports, err := c.GetIsiExports()
 	if err != nil {
