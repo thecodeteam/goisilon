@@ -26,19 +26,21 @@ Intialize a new client
 
 Create a Volume
 
-	volume, err := c.CreateVolume("testing")
+    volume, err := c.CreateVolume("testing")
 
 
 Export a Volume
 
-  err := c.ExportVolume("testing")
+    err := c.ExportVolume("testing")
+
 
 Delete a Volume
 
-  _, err := c.api.DeleteIsiVolume(name)
+    _, err := c.api.DeleteIsiVolume(name)
 
 
-For example usage you can see the [Rex-RAY](https://github.com/emccode/rexray)
+
+For example usage you can see the [REX-Ray](https://github.com/emccode/rexray)
 repo.  There, the ```goisilon``` package is used to implement a
 ```Volume Manager``` across multiple storage platforms. This includes managing
 multipathing, mounts, and filesystems.
@@ -46,7 +48,7 @@ multipathing, mounts, and filesystems.
 ## Environment Variables
 Name | Description
 ---- | -----------
-`GOISILON_ENDPOINT` | the API endpoint, ie. https://10.5.132.140/api/json
+`GOISILON_ENDPOINT` | the API endpoint, https://172.17.177.230:8080
 `GOISILON_USERNAME` | the username
 `GOISILON_PASSWORD` | the password
 `GOISILON_INSECURE` | whether to skip SSL validation
