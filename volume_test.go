@@ -10,6 +10,7 @@ func init() {
 }
 
 func TestGetVolumes(*testing.T) {
+	// TODO: Make this more robust
 	volumes, err := client.GetVolumes()
 	if err != nil {
 		panic(err)
@@ -21,6 +22,7 @@ func TestGetVolumes(*testing.T) {
 }
 
 func TestCreateVolume(*testing.T) {
+	// TODO: Make this more robust
 	volume, err := client.CreateVolume("testing")
 	if err != nil {
 		panic(err)
@@ -31,6 +33,7 @@ func TestCreateVolume(*testing.T) {
 }
 
 func TestGetVolume(*testing.T) {
+	// TODO: Make this more robust
 	volume, err := client.GetVolume("", "testing")
 	if err != nil {
 		panic(err)
@@ -41,6 +44,7 @@ func TestGetVolume(*testing.T) {
 }
 
 func TestGetVolumeNone(*testing.T) {
+	// TODO: Make this more robust
 	volume, err := client.GetVolume("invalidvolume", "")
 	if err != nil {
 		panic(err)
@@ -53,6 +57,7 @@ func TestGetVolumeNone(*testing.T) {
 }
 
 func TestDeleteVolume(*testing.T) {
+	// TODO: Make this more robust
 	err := client.DeleteVolume("testing")
 	if err != nil {
 		panic(err)
@@ -61,6 +66,7 @@ func TestDeleteVolume(*testing.T) {
 }
 
 func TestExportVolume(*testing.T) {
+	// TODO: Make this more robust
 	err := client.ExportVolume("testing")
 	if err != nil {
 		panic(err)
@@ -69,6 +75,7 @@ func TestExportVolume(*testing.T) {
 }
 
 func TestUnexportVolume(*testing.T) {
+	// TODO: Make this more robust
 	err := client.UnexportVolume("testing")
 	if err != nil {
 		panic(err)
@@ -77,11 +84,12 @@ func TestUnexportVolume(*testing.T) {
 }
 
 func TestPath(*testing.T) {
+	// TODO: Make this more robust
 	fmt.Println(client.Path("testing"))
-
 }
 
 func TestGetVolumeExports(*testing.T) {
+	// TODO: Make this more robust
 	volumeExports, err := client.GetVolumeExports()
 	if err != nil {
 		panic(err)

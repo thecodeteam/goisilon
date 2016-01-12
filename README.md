@@ -36,7 +36,7 @@ Export a Volume
 
 Delete a Volume
 
-    _, err := c.api.DeleteIsiVolume(name)
+    _, err := c.DeleteVolume(name)
 
 
 
@@ -50,6 +50,7 @@ Name | Description
 ---- | -----------
 `GOISILON_ENDPOINT` | the API endpoint, https://172.17.177.230:8080
 `GOISILON_USERNAME` | the username
+`GOISILON_GROUP` | the user's group
 `GOISILON_PASSWORD` | the password
 `GOISILON_INSECURE` | whether to skip SSL validation
 `GOISILON_VOLUMEPATH` | which base path to use when looking for volume directories
