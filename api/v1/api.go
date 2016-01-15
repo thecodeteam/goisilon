@@ -63,7 +63,11 @@ type getIsiVolumeAttributesResp struct {
 
 // Isi PAPI export path JSON struct
 type ExportPathList struct {
-	Paths []string `json:"paths"`
+	Paths  []string `json:"paths"`
+	MapAll struct {
+		User   string   `json:"user"`
+		Groups []string `json:"groups,omitempty"`
+	} `json:"map_all"`
 }
 
 // Isi PAPI export clients JSON struct
@@ -305,6 +309,10 @@ func (papi *PapiConnection) Export(path string) (err error) {
 	}
 
 	var data = &ExportPathList{Paths: []string{path}}
+	data.MapAll.User = papi.username
+	if papi.group != "" {
+		data.MapAll.Groups = append(data.MapAll.Groups, papi.group)
+	}
 	headers := map[string]string{"Content-Type": "application/json"}
 	var resp *postIsiExportResp
 
