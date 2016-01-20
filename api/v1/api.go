@@ -12,6 +12,7 @@ const (
 	papiVolumesPath   = "/ifs/volumes"
 	papiExportsPath   = "platform/1/protocols/nfs/exports"
 	papiQuotaPath     = "platform/1/quota/quotas"
+	papiSnapshotsPath = "platform/1/snapshot/snapshots"
 )
 
 var debug bool
@@ -91,6 +92,36 @@ type getIsiExportsResp struct {
 	ExportList []*IsiExport `json:"exports"`
 }
 
+// Isi PAPI snapshot path JSON struct
+type SnapshotPath struct {
+	Path string `json:"path"`
+	Name string `json:"name,omitempty"`
+}
+
+// Isi PAPI snapshot JSON struct
+type IsiSnapshot struct {
+	Created       int64   `json:"created"`
+	Expires       int64   `json:"expires"`
+	HasLocks      bool    `json:"has_locks"`
+	Id            int64   `json:"id"`
+	Name          string  `json:"name"`
+	Path          string  `json:"path"`
+	PctFilesystem float64 `json:"pct_filesystem"`
+	PctReserve    float64 `json:"pct_reserve"`
+	Schedule      string  `json:"schedule"`
+	ShadowBytes   int64   `json:"shadow_bytes"`
+	Size          int64   `json:"size"`
+	State         string  `json:"state"`
+	TargetId      int64   `json:"target_it"`
+	TargetName    string  `json:"target_name"`
+}
+
+type getIsiSnapshotsResp struct {
+	SnapshotList []*IsiSnapshot `json:"snapshots"`
+	Total        int64          `json:"total"`
+	Resume       string         `json:"resume"`
+}
+
 type isiThresholds struct {
 	Advisory             int64       `json:"advisory"`
 	AdvisoryExceeded     bool        `json:"advisory_exceeded"`
@@ -148,7 +179,7 @@ type isiQuotaListResp struct {
 	Quotas []IsiQuota `json:"quotas"`
 }
 
-// Get the quota for a directory
+// GetIsiQuota queries the quota for a directory
 func (papi *PapiConnection) GetIsiQuota(path string) (quota *IsiQuota, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/quota/quotas
 	// This will list out all quotas on the cluster
@@ -171,7 +202,7 @@ func (papi *PapiConnection) GetIsiQuota(path string) (quota *IsiQuota, err error
 
 // TODO: Add a means to set/update more than just the hard threshold
 
-// Set the hard threshold of a quota for a directory
+// SetIsiQuotaHardThreshold sets the hard threshold of a quota for a directory
 func (papi *PapiConnection) SetIsiQuotaHardThreshold(path string, size int64) (err error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
@@ -198,7 +229,7 @@ func (papi *PapiConnection) SetIsiQuotaHardThreshold(path string, size int64) (e
 	return err
 }
 
-// Update the hard threshold of a quota for a directory
+// UpdateIsiQuotaHardThreshold modifies the hard threshold of a quota for a directory
 func (papi *PapiConnection) UpdateIsiQuotaHardThreshold(path string, size int64) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/quota/quotas/Id
 	//             { "enforced" : true,
@@ -224,7 +255,7 @@ func (papi *PapiConnection) UpdateIsiQuotaHardThreshold(path string, size int64)
 	return err
 }
 
-// Delete the quota for a directory
+// DeleteIsiQuota removes the quota for a directory
 func (papi *PapiConnection) DeleteIsiQuota(path string) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/quota/quotas?path=/path/to/volume
 	// This will remove a the quota on a volume
@@ -235,16 +266,14 @@ func (papi *PapiConnection) DeleteIsiQuota(path string) (err error) {
 	return err
 }
 
-// Get a list of all docker volumes on the cluster
-// Note: All Docker Volumes are being stored in a single directory on the cluster.
+// GetIsiVolumes queries a list of all volumes on the cluster
 func (papi *PapiConnection) GetIsiVolumes() (resp *getIsiVolumesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volumes/
 	err = papi.query("GET", papi.nameSpacePath(), "", nil, nil, &resp)
 	return resp, err
 }
 
-// Create a new docker volume on the cluster
-// Note: A Docker Volume is just a directory on the cluster
+// CreateIsiVolume makes a new volume on the cluster
 func (papi *PapiConnection) CreateIsiVolume(name string) (resp *getIsiVolumesResp, err error) {
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/volume_name
 	//             x-isi-ifs-target-type: container
@@ -280,16 +309,14 @@ func (papi *PapiConnection) CreateIsiVolume(name string) (resp *getIsiVolumesRes
 	return resp, err
 }
 
-// Query the attributes of a docker volume on the cluster
-// Note: A Docker Volume is just a directory on the cluster
+// GetIsiVolume queries the attributes of a volume on the cluster
 func (papi *PapiConnection) GetIsiVolume(name string) (resp *getIsiVolumeAttributesResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume/?metadata
 	err = papi.query("GET", papi.nameSpacePath(), name, map[string]string{"metadata": ""}, nil, &resp)
 	return resp, err
 }
 
-// Delete a docker volume from the cluster
-// Note: A Docker Volume is just a directory on the cluster
+// DeleteIsiVolume removes a volume from the cluster
 func (papi *PapiConnection) DeleteIsiVolume(name string) (resp *getIsiVolumesResp, err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/namespace/path/to/volumes/volume_name
 
@@ -297,8 +324,8 @@ func (papi *PapiConnection) DeleteIsiVolume(name string) (resp *getIsiVolumesRes
 	return resp, err
 }
 
-// Enable an NFS export on the cluster to access the docker volumes.  Return the path to the export
-// so other processes can mount the docker volume directory
+// Export enables an NFS export on the cluster to access the volumes.  Return the path to the export
+// so other processes can mount the volume directory
 func (papi *PapiConnection) Export(path string) (err error) {
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/protocols/nfs/exports/
 	//            Content-Type: application/json
@@ -325,7 +352,7 @@ func (papi *PapiConnection) Export(path string) (err error) {
 	return nil
 }
 
-// Limit access to an NFS export on the cluster to a specific client address.
+// SetExportClients limits access to an NFS export on the cluster to a specific client address.
 func (papi *PapiConnection) SetExportClients(Id int, clients []string) (err error) {
 	// PAPI call: PUT https://1.2.3.4:8080/platform/1/protocols/nfs/exports/Id
 	//            Content-Type: application/json
@@ -340,7 +367,7 @@ func (papi *PapiConnection) SetExportClients(Id int, clients []string) (err erro
 	return err
 }
 
-// Disable the NFS export on the cluster that points to the docker volumes directory.
+// Unexport disables the NFS export on the cluster that points to the volumes directory.
 func (papi *PapiConnection) Unexport(Id int) (err error) {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/protocols/nfs/exports/23
 
@@ -364,12 +391,68 @@ func (papi *PapiConnection) exportsPath() string {
 	return fmt.Sprintf("%s%s", papiExportsPath, papi.VolumePath)
 }
 
-// Get a list of all exports on the cluster
-// TODO: This shouldn't be public, but I'm still researching how to do that while still being
-// able to use the PapiConnection functions.
+// GetIsiExports queries a list of all exports on the cluster
 func (papi *PapiConnection) GetIsiExports() (resp *getIsiExportsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/protocols/nfs/exports
 	err = papi.query("GET", papiExportsPath, "", nil, nil, &resp)
 
 	return resp, err
+}
+
+// GetIsiSnapshots queries a list of all snapshots on the cluster
+func (papi *PapiConnection) GetIsiSnapshots() (resp *getIsiSnapshotsResp, err error) {
+	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots
+	err = papi.query("GET", papiSnapshotsPath, "", nil, nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// GetIsiSnapshot queries an individual snapshot on the cluster
+func (papi *PapiConnection) GetIsiSnapshot(id int64) (*IsiSnapshot, error) {
+	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
+	snapshotUrl := fmt.Sprintf("%s/%d", papiSnapshotsPath, id)
+	var resp *getIsiSnapshotsResp
+	err := papi.query("GET", snapshotUrl, "", nil, nil, &resp)
+	if err != nil {
+		return nil, err
+	}
+	// PAPI returns the snapshot data in a JSON list with the same structure as
+	// when querying all snapshots.  Since this is for a single Id, we just
+	// want the first (and should be only) entry in the list.
+	return resp.SnapshotList[0], nil
+}
+
+// CreateIsiSnapshot makes a new snapshot on the cluster
+func (papi *PapiConnection) CreateIsiSnapshot(path, name string) (resp *IsiSnapshot, err error) {
+	// PAPI call: POST https://1.2.3.4:8080/platform/1/snapshot/snapshots
+	//            Content-Type: application/json
+	//            {path: "/path/to/volume"
+	//             name: "snapshot_name"  <--- optional
+	//            }
+	if path == "" {
+		return nil, errors.New("no path set")
+	}
+
+	data := &SnapshotPath{Path: path}
+	if name != "" {
+		data.Name = name
+	}
+	headers := map[string]string{"Content-Type": "application/json"}
+
+	err = papi.queryWithHeaders("POST", papiSnapshotsPath, "", nil, headers, data, &resp)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
+// RemoveIsiSnapshot deletes a snapshot from the cluster
+func (papi *PapiConnection) RemoveIsiSnapshot(id int64) error {
+	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
+	snapshotUrl := fmt.Sprintf("%s/%d", papiSnapshotsPath, id)
+	err := papi.query("DELETE", snapshotUrl, "", nil, nil, nil)
+
+	return err
 }
