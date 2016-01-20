@@ -10,9 +10,16 @@ func init() {
 }
 
 func TestGetSnapshots(*testing.T) {
-	snapshotPath := "/ifs/volumes"
+	snapshotPath := "test_get_snapshots_volume"
 	snapshotName1 := "test_get_snapshots_name1"
 	snapshotName2 := "test_get_snapshots_name2"
+
+	// create the test volume
+	_, err := client.CreateVolume(snapshotPath)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(snapshotPath)
 
 	// identify all snapshots on the cluster
 	snapshotMap := make(map[int64]string)
@@ -72,11 +79,23 @@ func TestGetSnapshots(*testing.T) {
 }
 
 func TestGetSnapshotsByPath(*testing.T) {
-	snapshotPath1 := "/ifs/volumes"
-	snapshotPath2 := "/ifs/data"
+	snapshotPath1 := "test_get_snap_by_path_volume1"
+	snapshotPath2 := "test_get_snap_by_path_volume2"
 	snapshotName1 := "test_get_snapshots_by_path_name1"
 	snapshotName2 := "test_get_snapshots_by_path_name2"
 	snapshotName3 := "test_get_snapshots_by_path_name3"
+
+	// create the two test volumes
+	_, err := client.CreateVolume(snapshotPath1)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(snapshotPath1)
+	_, err = client.CreateVolume(snapshotPath2)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(snapshotPath2)
 
 	// identify all snapshots on the cluster
 	snapshotMap := make(map[int64]string)
@@ -141,8 +160,15 @@ func TestGetSnapshotsByPath(*testing.T) {
 }
 
 func TestCreateSnapshot(*testing.T) {
-	snapshotPath := "/ifs/volumes"
-	snapshotName := "test_get_create_snapshot_name"
+	snapshotPath := "test_create_snapshot_volume"
+	snapshotName := "test_create_snapshot_name"
+
+	// create the test volume
+	_, err := client.CreateVolume(snapshotPath)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(snapshotPath)
 
 	// make sure the snapshot doesn't exist yet
 	snapshot, err := client.GetSnapshot(-1, snapshotName)
@@ -169,14 +195,21 @@ func TestCreateSnapshot(*testing.T) {
 	if snapshot.Name != snapshotName {
 		panic(fmt.Sprintf("Snapshot name not set properly.  Expected: (%s) Actual: (%s)\n", snapshotName, snapshot.Name))
 	}
-	if snapshot.Path != snapshotPath {
+	if snapshot.Path != client.Path(snapshotPath) {
 		panic(fmt.Sprintf("Snapshot path not set properly.  Expected: (%s) Actual: (%s)\n", snapshotPath, snapshot.Path))
 	}
 }
 
 func TestRemoveSnapshot(*testing.T) {
-	snapshotPath := "/ifs/volumes"
+	snapshotPath := "test_remove_snapshot_volume"
 	snapshotName := "test_remove_snapshot_name"
+
+	// create the test volume
+	_, err := client.CreateVolume(snapshotPath)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(snapshotPath)
 
 	// make sure the snapshot exists
 	client.CreateSnapshot(snapshotPath, snapshotName)

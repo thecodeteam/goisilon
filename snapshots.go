@@ -22,7 +22,7 @@ func (c *Client) GetSnapshotsByPath(path string) (SnapshotList, error) {
 	// find all the snapshots with the same path
 	snapshotsWithPath := make(SnapshotList, 0, len(snapshots.SnapshotList))
 	for _, snapshot := range snapshots.SnapshotList {
-		if snapshot.Path == path {
+		if snapshot.Path == c.Path(path) {
 			snapshotsWithPath = append(snapshotsWithPath, snapshot)
 		}
 	}
@@ -56,7 +56,7 @@ func (c *Client) GetSnapshot(id int64, name string) (Snapshot, error) {
 }
 
 func (c *Client) CreateSnapshot(path, name string) (Snapshot, error) {
-	return c.api.CreateIsiSnapshot(path, name)
+	return c.api.CreateIsiSnapshot(c.Path(path), name)
 }
 
 func (c *Client) RemoveSnapshot(id int64, name string) error {
