@@ -318,9 +318,21 @@ func (papi *PapiConnection) GetIsiVolume(name string) (resp *getIsiVolumeAttribu
 
 // DeleteIsiVolume removes a volume from the cluster
 func (papi *PapiConnection) DeleteIsiVolume(name string) (resp *getIsiVolumesResp, err error) {
-	// PAPI call: DELETE https://1.2.3.4:8080/namespace/path/to/volumes/volume_name
+	// PAPI call: DELETE https://1.2.3.4:8080/namespace/path/to/volumes/volume_name?recursive=true
 
-	err = papi.queryWithHeaders("DELETE", papi.nameSpacePath(), name, nil, nil, nil, &resp)
+	err = papi.queryWithHeaders("DELETE", papi.nameSpacePath(), name, map[string]string{"recursive": "true"}, nil, nil, &resp)
+	return resp, err
+}
+
+// CopyIsiVolume creates a new volume on the cluster based on an existing volume
+func (papi *PapiConnection) CopyIsiVolume(sourceName, destinationName string) (resp *getIsiVolumesResp, err error) {
+	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name
+	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
+
+	headers := map[string]string{"x-isi-ifs-copy-source": fmt.Sprintf("/%s/%s", papi.nameSpacePath(), sourceName)}
+
+	// copy the volume
+	err = papi.queryWithHeaders("PUT", papi.nameSpacePath(), destinationName, nil, headers, nil, &resp)
 	return resp, err
 }
 

@@ -67,7 +67,7 @@ func TestGetSnapshots(*testing.T) {
 		}
 	}
 	if len(snapshotMap) != 2 {
-		panic(fmt.Sprintf("Incorrect number of new exports.  Expected: 2 Actual: %d\n", len(snapshotMap)))
+		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
 	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
 		panic(fmt.Sprintf("testSnapshot1 was not in the snapshot list\n"))
@@ -149,7 +149,7 @@ func TestGetSnapshotsByPath(*testing.T) {
 		}
 	}
 	if len(snapshotMap) != 2 {
-		panic(fmt.Sprintf("Incorrect number of new exports.  Expected: 2 Actual: %d\n", len(snapshotMap)))
+		panic(fmt.Sprintf("Incorrect number of new snapshots.  Expected: 2 Actual: %d\n", len(snapshotMap)))
 	}
 	if _, found := snapshotMap[testSnapshot1.Id]; found == false {
 		panic(fmt.Sprintf("testSnapshot1 was not in the snapshot list\n"))
