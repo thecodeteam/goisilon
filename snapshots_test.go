@@ -236,3 +236,68 @@ func TestRemoveSnapshot(*testing.T) {
 		panic(fmt.Sprintf("Snapshot (%s) was not removed.\n%+v\n", snapshotName, snapshot))
 	}
 }
+
+func TestCopySnapshot(*testing.T) {
+	sourceSnapshotPath := "test_copy_snapshot_volume"
+	sourceSnapshotName := "test_copy_snapshot_name"
+	destinationVolume := "test_copy_snapshot_destination"
+	subdirectoryName := "test_sub_directory"
+	sourceSubDirectory := fmt.Sprintf("%s/%s", sourceSnapshotPath, subdirectoryName)
+	destinationSubDirectory := fmt.Sprintf("%s/%s", destinationVolume, subdirectoryName)
+
+	// create the test volume
+	_, err := client.CreateVolume(sourceSnapshotPath)
+	if err != nil {
+		panic(err)
+	}
+	//	defer client.DeleteVolume(snapshotPath)
+	// create a subdirectory in the test tvolume
+	_, err = client.CreateVolume(sourceSubDirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	// make sure the snapshot doesn't exist yet
+	snapshot, err := client.GetSnapshot(-1, sourceSnapshotName)
+	if err == nil && snapshot != nil {
+		panic(fmt.Sprintf("Snapshot (%s) already exists.\n", sourceSnapshotName))
+	}
+
+	// Add the test snapshot
+	testSnapshot, err := client.CreateSnapshot(sourceSnapshotPath, sourceSnapshotName)
+	if err != nil {
+		panic(err)
+	}
+	// make sure we clean up when we're done
+	defer client.RemoveSnapshot(testSnapshot.Id, sourceSnapshotName)
+	// remove the sub directory
+	err = client.DeleteVolume(sourceSubDirectory)
+	if err != nil {
+		panic(err)
+	}
+
+	// copy the snapshot to the destination volume
+	copiedVolume, err := client.CopySnapshot(testSnapshot.Id, testSnapshot.Name, destinationVolume)
+	if err != nil {
+		panic(err)
+	}
+	defer client.DeleteVolume(destinationVolume)
+
+	if copiedVolume.Name != destinationVolume {
+		panic(fmt.Sprintf("Copied volume has incorrect name.  Expected: (%s) Acutal: (%s)", destinationVolume, copiedVolume.Name))
+	}
+
+	// make sure the destination volume was created
+	volume, err := client.GetVolume("", destinationVolume)
+	if err != nil || volume == nil {
+		panic(fmt.Sprintf("Destination volume: (%s) was not created.\n", destinationVolume))
+	}
+	// make sure the sub directory was also created
+	subDirectory, err := client.GetVolume("", destinationSubDirectory)
+	if err != nil {
+		panic(fmt.Sprintf("Destination sub directory: (%s) was not created.\n", subdirectoryName))
+	}
+	if subDirectory.Name != destinationSubDirectory {
+		panic(fmt.Sprintf("Sub directory has incorrect name.  Expected: (%s) Acutal: (%s)", destinationSubDirectory, subDirectory.Name))
+	}
+}
