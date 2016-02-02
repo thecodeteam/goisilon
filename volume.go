@@ -57,6 +57,16 @@ func (c *Client) DeleteVolume(name string) error {
 	return err
 }
 
+//CopyVolume creates a volume based on an existing volume
+func (c *Client) CopyVolume(source_name, destination_name string) (Volume, error) {
+	_, err := c.api.CopyIsiVolume(source_name, destination_name)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.GetVolume(destination_name, destination_name)
+}
+
 //Path returns the path to a volume
 func (c *Client) Path(name string) string {
 	return fmt.Sprintf("%s/%s", c.api.VolumePath, name)
