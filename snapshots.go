@@ -1,6 +1,11 @@
 package goisilon
 
-import papi "github.com/emccode/goisilon/api/v1"
+import (
+	"errors"
+	"fmt"
+	papi "github.com/emccode/goisilon/api/v1"
+	"strings"
+)
 
 type SnapshotList []*papi.IsiSnapshot
 type Snapshot *papi.IsiSnapshot
@@ -66,4 +71,25 @@ func (c *Client) RemoveSnapshot(id int64, name string) error {
 	}
 
 	return c.api.RemoveIsiSnapshot(snapshot.Id)
+}
+
+func (c *Client) CopySnapshot(sourceId int64, sourceName, destinationName string) (Volume, error) {
+	snapshot, err := c.GetSnapshot(sourceId, sourceName)
+	if err != nil {
+		return nil, err
+	}
+	if snapshot == nil {
+		return nil, errors.New(fmt.Sprintf("Snapshot doesn't exist: (%d, %s)", sourceId, sourceName))
+	}
+
+	// get the volume name from the snapshot path
+	tokens := strings.Split(snapshot.Path, "/")
+	volumeName := tokens[len(tokens)-1]
+
+	_, err = c.api.CopyIsiSnapshot(snapshot.Name, volumeName, destinationName)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.GetVolume(destinationName, destinationName)
 }

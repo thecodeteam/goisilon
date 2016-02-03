@@ -8,11 +8,12 @@ import (
 )
 
 const (
-	papiNameSpacePath = "namespace"
-	papiVolumesPath   = "/ifs/volumes"
-	papiExportsPath   = "platform/1/protocols/nfs/exports"
-	papiQuotaPath     = "platform/1/quota/quotas"
-	papiSnapshotsPath = "platform/1/snapshot/snapshots"
+	papiNameSpacePath      = "namespace"
+	papiVolumesPath        = "/ifs/volumes"
+	papiExportsPath        = "platform/1/protocols/nfs/exports"
+	papiQuotaPath          = "platform/1/quota/quotas"
+	papiSnapshotsPath      = "platform/1/snapshot/snapshots"
+	papiVolumeSnapshotPath = "/ifs/.snapshot"
 )
 
 var debug bool
@@ -403,6 +404,10 @@ func (papi *PapiConnection) exportsPath() string {
 	return fmt.Sprintf("%s%s", papiExportsPath, papi.VolumePath)
 }
 
+func (papi *PapiConnection) volumeSnapshotPath(name string) string {
+	return fmt.Sprintf("%s/%s/volumes", papiVolumeSnapshotPath, name)
+}
+
 // GetIsiExports queries a list of all exports on the cluster
 func (papi *PapiConnection) GetIsiExports() (resp *getIsiExportsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/protocols/nfs/exports
@@ -458,6 +463,19 @@ func (papi *PapiConnection) CreateIsiSnapshot(path, name string) (resp *IsiSnaps
 		return nil, err
 	}
 	return resp, nil
+}
+
+// CopyIsiSnaphost copies all files/directories in a snapshot to a new directory
+func (papi *PapiConnection) CopyIsiSnapshot(sourceSnapshotName, sourceVolume, destinationName string) (resp *IsiVolume, err error) {
+	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name
+	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
+
+	headers := map[string]string{"x-isi-ifs-copy-source": fmt.Sprintf("/%s%s/%s/", papiNameSpacePath, papi.volumeSnapshotPath(sourceSnapshotName), sourceVolume)}
+
+	// copy the volume
+	err = papi.queryWithHeaders("PUT", papi.nameSpacePath(), destinationName, nil, headers, nil, &resp)
+
+	return resp, err
 }
 
 // RemoveIsiSnapshot deletes a snapshot from the cluster
