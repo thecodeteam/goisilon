@@ -180,7 +180,7 @@ func TestCopyVolume(*testing.T) {
 	if subTestVolume.Name != destinationSubDirectoryPath {
 		panic(fmt.Sprintf("Destination sub directory name not set properly.  Expected: (%s) Actual: (%s)\n", destinationSubDirectoryPath, subTestVolume.Name))
 	}
-	
+
 }
 
 func TestExportVolume(*testing.T) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -405,7 +406,9 @@ func (papi *PapiConnection) exportsPath() string {
 }
 
 func (papi *PapiConnection) volumeSnapshotPath(name string) string {
-	return fmt.Sprintf("%s/%s/volumes", papiVolumeSnapshotPath, name)
+	// snapshots of /ifs are stored in /ifs/.snapshots/snapshot_name
+	path_tokens := strings.SplitN(papi.nameSpacePath(), "/ifs/", 2)
+	return fmt.Sprintf("%s/ifs/.snapshot/%s/%s", path_tokens[0], name, path_tokens[1])
 }
 
 // GetIsiExports queries a list of all exports on the cluster
@@ -470,7 +473,7 @@ func (papi *PapiConnection) CopyIsiSnapshot(sourceSnapshotName, sourceVolume, de
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name
 	//             x-isi-ifs-copy-source: /path/to/snapshot/volumes/source_volume_name
 
-	headers := map[string]string{"x-isi-ifs-copy-source": fmt.Sprintf("/%s%s/%s/", papiNameSpacePath, papi.volumeSnapshotPath(sourceSnapshotName), sourceVolume)}
+	headers := map[string]string{"x-isi-ifs-copy-source": fmt.Sprintf("/%s/%s/", papi.volumeSnapshotPath(sourceSnapshotName), sourceVolume)}
 
 	// copy the volume
 	err = papi.queryWithHeaders("PUT", papi.nameSpacePath(), destinationName, nil, headers, nil, &resp)

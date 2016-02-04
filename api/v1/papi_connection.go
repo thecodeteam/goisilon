@@ -41,8 +41,10 @@ func New(endpoint string, insecure bool, username, group, password, volumePath s
 
 	if volumePath == "" {
 		volumePath = papiVolumesPath
-	} else {
+	} else if volumePath[0] == '/' {
 		volumePath = fmt.Sprintf("%s%s", papiVolumesPath, volumePath)
+	} else {
+		volumePath = fmt.Sprintf("%s/%s", papiVolumesPath, volumePath)
 	}
 
 	var client *http.Client
