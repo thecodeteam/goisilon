@@ -82,14 +82,16 @@ func (c *Client) CopySnapshot(sourceId int64, sourceName, destinationName string
 		return nil, errors.New(fmt.Sprintf("Snapshot doesn't exist: (%d, %s)", sourceId, sourceName))
 	}
 
-	// get the volume name from the snapshot path
-	tokens := strings.Split(snapshot.Path, "/")
-	volumeName := tokens[len(tokens)-1]
-
-	_, err = c.api.CopyIsiSnapshot(snapshot.Name, volumeName, destinationName)
+	_, err = c.api.CopyIsiSnapshot(snapshot.Name, c.NameFromPath(snapshot.Path), destinationName)
 	if err != nil {
 		return nil, err
 	}
 
 	return c.GetVolume(destinationName, destinationName)
+}
+
+func (c *Client) NameFromPath(path string) string {
+	// the name is the last entry in the path
+	tokens := strings.Split(path, "/")
+	return tokens[len(tokens)-1]
 }
