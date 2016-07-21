@@ -10,7 +10,7 @@ import (
 
 const (
 	papiNameSpacePath      = "namespace"
-	papiVolumesPath        = "/ifs/volumes"
+	papiVolumesPath        = "/ifs"
 	papiExportsPath        = "platform/1/protocols/nfs/exports"
 	papiQuotaPath          = "platform/1/quota/quotas"
 	papiSnapshotsPath      = "platform/1/snapshot/snapshots"
@@ -209,7 +209,7 @@ func (papi *PapiConnection) SetIsiQuotaHardThreshold(path string, size int64) (e
 	// PAPI call: POST https://1.2.3.4:8080/platform/1/quota/quotas
 	//             { "enforced" : true,
 	//               "include_snapshots" : false,
-	//               "path" : "/ifs/volumes/volume_name",
+	//               "path" : "/ifs/volume_name",
 	//               "thresholds_include_overhead" : false,
 	//               "type" : "directory",
 	//               "thresholds" : { "advisory" : null,
