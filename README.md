@@ -5,8 +5,7 @@
 NAS platforms.  In the true nature of API bindings, it is intended that the
 functions available are basically a direct implementation of what is available
 through the API.  There is however, an abstraction called object which can be
-used by things like `Docker`, `Mesos`, and
-[REX-Ray](https://github.com/emccode/rexray) to integrate Isilon.
+used by things like `Docker`, `Mesos`, and [REX-Ray](https://github.com/emccode/rexray) to integrate Isilon.
 
 ## API Compatibility
 Currently only tested with v7+.
@@ -53,7 +52,7 @@ Name | Description
 `GOISILON_GROUP` | the user's group
 `GOISILON_PASSWORD` | the password
 `GOISILON_INSECURE` | whether to skip SSL validation
-`GOISILON_VOLUMEPATH` | which base path to use when looking for volume directories
+`GOISILON_VOLUMEPATH` | base path to use for root volume directory. Defaults to `/ifs/volumes` when left blank.  **WARNING: the `username` is granted root privilege to the `volumePath`.**
 
 ## Contributions
 Please contribute!

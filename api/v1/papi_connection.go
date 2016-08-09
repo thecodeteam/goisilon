@@ -42,9 +42,13 @@ func New(endpoint string, insecure bool, username, group, password, volumePath s
 	if volumePath == "" {
 		volumePath = papiVolumesPath
 	} else if volumePath[0] == '/' {
-		volumePath = fmt.Sprintf("%s%s", papiVolumesPath, volumePath)
+		volumePath = fmt.Sprintf("%s", volumePath)
 	} else {
-		volumePath = fmt.Sprintf("%s/%s", papiVolumesPath, volumePath)
+		volumePath = fmt.Sprintf("/%s", volumePath)
+	}
+
+	if volumePath == "/ifs" || volumePath == "/ifs/data" || volumePath == "/ifs/data/Isilon_Support" || volumePath == "/ifs/home" || volumePath == "/ifs/home/ftp" || volumePath == "/ifs/.snapshot" {
+		return nil, errors.New("volumePath cannot be the root of /ifs, /ifs/data, /ifs/data/Isilon_Support, /ifs/home, /ifs/home/ftp, or /ifs/.snapshot")
 	}
 
 	var client *http.Client
