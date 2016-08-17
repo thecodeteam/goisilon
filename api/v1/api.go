@@ -8,13 +8,13 @@ import (
 	"strings"
 )
 
-const (
-	papiNameSpacePath      = "namespace"
-	papiVolumesPath        = "/ifs/volumes"
-	papiExportsPath        = "platform/1/protocols/nfs/exports"
-	papiQuotaPath          = "platform/1/quota/quotas"
-	papiSnapshotsPath      = "platform/1/snapshot/snapshots"
-	papiVolumeSnapshotPath = "/ifs/.snapshot"
+var (
+	NamespacePath       = "namespace"
+	VolumesPath         = "/ifs/volumes"
+	ExportsPath         = "platform/1/protocols/nfs/exports"
+	QuotaPath           = "platform/1/quota/quotas"
+	SnapshotsPath       = "platform/1/snapshot/snapshots"
+	VolumeSnapshotsPath = "/ifs/.snapshot"
 )
 
 var debug bool
@@ -187,7 +187,7 @@ func (papi *PapiConnection) GetIsiQuota(path string) (quota *IsiQuota, err error
 	// This will list out all quotas on the cluster
 
 	var quotaResp isiQuotaListResp
-	err = papi.query("GET", papiQuotaPath, "", nil, nil, &quotaResp)
+	err = papi.query("GET", QuotaPath, "", nil, nil, &quotaResp)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +227,7 @@ func (papi *PapiConnection) SetIsiQuotaHardThreshold(path string, size int64) (e
 	}
 
 	var quotaResp IsiQuota
-	err = papi.query("POST", papiQuotaPath, "", nil, data, &quotaResp)
+	err = papi.query("POST", QuotaPath, "", nil, data, &quotaResp)
 	return err
 }
 
@@ -253,7 +253,7 @@ func (papi *PapiConnection) UpdateIsiQuotaHardThreshold(path string, size int64)
 	}
 
 	var quotaResp IsiQuota
-	err = papi.query("PUT", papiQuotaPath, quota.Id, nil, data, &quotaResp)
+	err = papi.query("PUT", QuotaPath, quota.Id, nil, data, &quotaResp)
 	return err
 }
 
@@ -263,7 +263,7 @@ func (papi *PapiConnection) DeleteIsiQuota(path string) (err error) {
 	// This will remove a the quota on a volume
 
 	var quotaResp isiQuotaListResp
-	err = papi.query("DELETE", papiQuotaPath, "", map[string]string{"path": path}, nil, &quotaResp)
+	err = papi.query("DELETE", QuotaPath, "", map[string]string{"path": path}, nil, &quotaResp)
 
 	return err
 }
@@ -357,7 +357,7 @@ func (papi *PapiConnection) Export(path string) (err error) {
 	headers := map[string]string{"Content-Type": "application/json"}
 	var resp *postIsiExportResp
 
-	err = papi.queryWithHeaders("POST", papiExportsPath, "", nil, headers, data, &resp)
+	err = papi.queryWithHeaders("POST", ExportsPath, "", nil, headers, data, &resp)
 
 	if err != nil {
 		return err
@@ -376,7 +376,7 @@ func (papi *PapiConnection) SetExportClients(Id int, clients []string) (err erro
 	headers := map[string]string{"Content-Type": "application/json"}
 	var resp *postIsiExportResp
 
-	err = papi.queryWithHeaders("PUT", papiExportsPath, strconv.Itoa(Id), nil, headers, data, &resp)
+	err = papi.queryWithHeaders("PUT", ExportsPath, strconv.Itoa(Id), nil, headers, data, &resp)
 
 	return err
 }
@@ -389,7 +389,7 @@ func (papi *PapiConnection) Unexport(Id int) (err error) {
 		return errors.New("no path Id set")
 	}
 
-	exportPath := fmt.Sprintf("%s/%d", papiExportsPath, Id)
+	exportPath := fmt.Sprintf("%s/%d", ExportsPath, Id)
 
 	var resp postIsiExportResp
 	err = papi.queryWithHeaders("DELETE", exportPath, "", nil, nil, nil, &resp)
@@ -398,11 +398,11 @@ func (papi *PapiConnection) Unexport(Id int) (err error) {
 }
 
 func (papi *PapiConnection) nameSpacePath() string {
-	return fmt.Sprintf("%s%s", papiNameSpacePath, papi.VolumePath)
+	return fmt.Sprintf("%s%s", NamespacePath, papi.VolumePath)
 }
 
 func (papi *PapiConnection) exportsPath() string {
-	return fmt.Sprintf("%s%s", papiExportsPath, papi.VolumePath)
+	return fmt.Sprintf("%s%s", ExportsPath, papi.VolumePath)
 }
 
 func (papi *PapiConnection) volumeSnapshotPath(name string) string {
@@ -414,7 +414,7 @@ func (papi *PapiConnection) volumeSnapshotPath(name string) string {
 // GetIsiExports queries a list of all exports on the cluster
 func (papi *PapiConnection) GetIsiExports() (resp *getIsiExportsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/protocols/nfs/exports
-	err = papi.query("GET", papiExportsPath, "", nil, nil, &resp)
+	err = papi.query("GET", ExportsPath, "", nil, nil, &resp)
 
 	return resp, err
 }
@@ -422,7 +422,7 @@ func (papi *PapiConnection) GetIsiExports() (resp *getIsiExportsResp, err error)
 // GetIsiSnapshots queries a list of all snapshots on the cluster
 func (papi *PapiConnection) GetIsiSnapshots() (resp *getIsiSnapshotsResp, err error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots
-	err = papi.query("GET", papiSnapshotsPath, "", nil, nil, &resp)
+	err = papi.query("GET", SnapshotsPath, "", nil, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -432,7 +432,7 @@ func (papi *PapiConnection) GetIsiSnapshots() (resp *getIsiSnapshotsResp, err er
 // GetIsiSnapshot queries an individual snapshot on the cluster
 func (papi *PapiConnection) GetIsiSnapshot(id int64) (*IsiSnapshot, error) {
 	// PAPI call: GET https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
-	snapshotUrl := fmt.Sprintf("%s/%d", papiSnapshotsPath, id)
+	snapshotUrl := fmt.Sprintf("%s/%d", SnapshotsPath, id)
 	var resp *getIsiSnapshotsResp
 	err := papi.query("GET", snapshotUrl, "", nil, nil, &resp)
 	if err != nil {
@@ -461,7 +461,7 @@ func (papi *PapiConnection) CreateIsiSnapshot(path, name string) (resp *IsiSnaps
 	}
 	headers := map[string]string{"Content-Type": "application/json"}
 
-	err = papi.queryWithHeaders("POST", papiSnapshotsPath, "", nil, headers, data, &resp)
+	err = papi.queryWithHeaders("POST", SnapshotsPath, "", nil, headers, data, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -484,7 +484,7 @@ func (papi *PapiConnection) CopyIsiSnapshot(sourceSnapshotName, sourceVolume, de
 // RemoveIsiSnapshot deletes a snapshot from the cluster
 func (papi *PapiConnection) RemoveIsiSnapshot(id int64) error {
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/snapshot/snapshots/123
-	snapshotUrl := fmt.Sprintf("%s/%d", papiSnapshotsPath, id)
+	snapshotUrl := fmt.Sprintf("%s/%d", SnapshotsPath, id)
 	err := papi.query("DELETE", snapshotUrl, "", nil, nil, nil)
 
 	return err
