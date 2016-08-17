@@ -7,6 +7,25 @@ import (
 	papi "github.com/emccode/goisilon/api/v1"
 )
 
+func NamespacePath(p string) {
+	papi.NamespacePath = p
+}
+func VolumesPath(p string) {
+	papi.VolumesPath = p
+}
+func ExportsPath(p string) {
+	papi.ExportsPath = p
+}
+func QuotaPath(p string) {
+	papi.QuotaPath = p
+}
+func SnapshotsPath(p string) {
+	papi.SnapshotsPath = p
+}
+func VolumeSnapshotsPath(p string) {
+	papi.VolumeSnapshotsPath = p
+}
+
 type Client1 struct {
 	api *papi.PapiConnection
 }
