@@ -12,6 +12,8 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
+	"time"
 
 	log "github.com/emccode/gournal"
 	"golang.org/x/net/context"
@@ -118,22 +120,24 @@ type JSONError struct {
 	Err        []Error `json:"errors"`
 }
 
+// ClientOptions are options for the API client.
+type ClientOptions struct {
+	// Insecure is a flag that indicates whether or not to supress SSL errors.
+	Insecure bool
+
+	// VolumesPath is the location on the Isilon server where volumes are
+	// stored.
+	VolumesPath string
+
+	// Timeout specifies a time limit for requests made by this client.
+	Timeout time.Duration
+}
+
 // New returns a new API client.
 func New(
 	ctx context.Context,
 	host, user, pass, group string,
-	insecure bool) (Client, error) {
-
-	return NewWithVolumesPath(
-		ctx, host, user, pass, group, insecure, defaultVolumesPath)
-}
-
-// NewWithVolumesPath returns a new API client with a custom volumes path.
-func NewWithVolumesPath(
-	ctx context.Context,
-	host, user, pass, group string,
-	insecure bool,
-	volumesPath string) (Client, error) {
+	opts *ClientOptions) (Client, error) {
 
 	if host == "" || user == "" || pass == "" {
 		return nil, newClientErr
@@ -144,29 +148,35 @@ func NewWithVolumesPath(
 		user: user,
 		grup: group,
 		auth: fmtAuthHeaderVal(user, pass),
-		volp: volumesPath,
+		volp: defaultVolumesPath,
 	}
 
-	if c.volp == "" {
-		c.volp = defaultVolumesPath
-	}
+	c.http = &http.Client{}
 
-	if insecure {
-		c.http = &http.Client{
-			Transport: &http.Transport{
-				TLSClientConfig: &tls.Config{
-					InsecureSkipVerify: insecure,
-				},
-			},
+	if opts != nil {
+		if opts.VolumesPath != "" {
+			c.volp = opts.VolumesPath
 		}
-	} else {
-		c.http = &http.Client{}
+
+		if opts.Timeout != 0 {
+			c.http.Timeout = opts.Timeout
+		}
+
+		if opts.Insecure {
+			c.http.Transport = &http.Transport{
+				TLSClientConfig: &tls.Config{
+					InsecureSkipVerify: true,
+				},
+			}
+		}
 	}
 
 	resp := &apiVerResponse{}
-	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil {
-		log.WithError(err).Warn(ctx, "error getting latest api version")
+	if err := c.Get(ctx, "/platform/latest", "", nil, nil, resp); err != nil &&
+		!strings.HasPrefix(err.Error(), "json: ") {
+		return nil, err
 	}
+
 	if resp.Latest != nil {
 		i, err := strconv.ParseUint(*resp.Latest, 10, 8)
 		if err != nil {
@@ -354,19 +364,19 @@ func (c *client) DoWithHeaders(
 	)
 
 	if lvl, ok := ctx.Value(
-		log.LevelKey()).(log.Level); ok && lvl == log.DebugLevel {
+		log.LevelKey()).(log.Level); ok && lvl >= log.DebugLevel {
 		isDebugLog = true
 	}
 
 	logRequest(ctx, logReqBuf, req)
 	if isDebugLog {
-		io.Copy(os.Stdout, logReqBuf)
+		log.Debug(ctx, logReqBuf.String())
 	}
 
 	// send the request
 	if res, err = ctxhttp.Do(ctx, c.http, req); err != nil {
 		if !isDebugLog {
-			io.Copy(os.Stdout, logReqBuf)
+			log.Debug(ctx, logReqBuf.String())
 		}
 		return err
 	}

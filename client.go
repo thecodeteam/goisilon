@@ -3,6 +3,7 @@ package goisilon
 import (
 	"os"
 	"strconv"
+	"time"
 
 	"golang.org/x/net/context"
 
@@ -32,10 +33,17 @@ func NewClientWithArgs(
 	ctx context.Context,
 	endpoint string,
 	insecure bool,
-	user, group, pass, volumePath string) (*Client, error) {
+	user, group, pass, volumesPath string) (*Client, error) {
 
-	client, err := api.NewWithVolumesPath(
-		ctx, endpoint, user, pass, group, insecure, volumePath)
+	timeout, _ := time.ParseDuration(os.Getenv("GOISILON_TIMEOUT"))
+
+	client, err := api.New(
+		ctx, endpoint, user, pass, group,
+		&api.ClientOptions{
+			Insecure:    insecure,
+			VolumesPath: volumesPath,
+			Timeout:     timeout,
+		})
 	if err != nil {
 		return nil, err
 	}

@@ -7,8 +7,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httputil"
-	"os"
 
+	log "github.com/emccode/gournal"
 	"golang.org/x/net/context"
 )
 
@@ -51,7 +51,7 @@ func logResponse(ctx context.Context, res *http.Response) {
 		fmt.Fprintln(w, scanner.Text())
 	}
 
-	io.Copy(os.Stdout, w)
+	log.Debug(ctx, w.String())
 }
 
 // WriteIndentedN indents all lines n spaces.
