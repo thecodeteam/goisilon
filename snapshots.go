@@ -3,15 +3,18 @@ package goisilon
 import (
 	"errors"
 	"fmt"
-	papi "github.com/emccode/goisilon/api/v1"
-	"strings"
+	"path"
+
+	"golang.org/x/net/context"
+
+	api "github.com/emccode/goisilon/api/v1"
 )
 
-type SnapshotList []*papi.IsiSnapshot
-type Snapshot *papi.IsiSnapshot
+type SnapshotList []*api.IsiSnapshot
+type Snapshot *api.IsiSnapshot
 
-func (c *Client) GetSnapshots() (SnapshotList, error) {
-	snapshots, err := c.api.GetIsiSnapshots()
+func (c *Client) GetSnapshots(ctx context.Context) (SnapshotList, error) {
+	snapshots, err := api.GetIsiSnapshots(ctx, c.API)
 	if err != nil {
 		return nil, err
 	}
@@ -19,24 +22,28 @@ func (c *Client) GetSnapshots() (SnapshotList, error) {
 	return snapshots.SnapshotList, nil
 }
 
-func (c *Client) GetSnapshotsByPath(path string) (SnapshotList, error) {
-	snapshots, err := c.api.GetIsiSnapshots()
+func (c *Client) GetSnapshotsByPath(
+	ctx context.Context, path string) (SnapshotList, error) {
+
+	snapshots, err := api.GetIsiSnapshots(ctx, c.API)
 	if err != nil {
 		return nil, err
 	}
 	// find all the snapshots with the same path
 	snapshotsWithPath := make(SnapshotList, 0, len(snapshots.SnapshotList))
 	for _, snapshot := range snapshots.SnapshotList {
-		if snapshot.Path == c.Path(path) {
+		if snapshot.Path == c.API.VolumePath(path) {
 			snapshotsWithPath = append(snapshotsWithPath, snapshot)
 		}
 	}
 	return snapshotsWithPath, nil
 }
 
-func (c *Client) GetSnapshot(id int64, name string) (Snapshot, error) {
+func (c *Client) GetSnapshot(
+	ctx context.Context, id int64, name string) (Snapshot, error) {
+
 	// if we have an id, use it to find the snapshot
-	snapshot, err := c.api.GetIsiSnapshot(id)
+	snapshot, err := api.GetIsiSnapshot(ctx, c.API, id)
 	if err == nil {
 		return snapshot, nil
 	}
@@ -46,7 +53,7 @@ func (c *Client) GetSnapshot(id int64, name string) (Snapshot, error) {
 	if name == "" {
 		return nil, err
 	}
-	snapshotList, err := c.GetSnapshots()
+	snapshotList, err := c.GetSnapshots(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -60,38 +67,42 @@ func (c *Client) GetSnapshot(id int64, name string) (Snapshot, error) {
 	return nil, nil
 }
 
-func (c *Client) CreateSnapshot(path, name string) (Snapshot, error) {
-	return c.api.CreateIsiSnapshot(c.Path(path), name)
+func (c *Client) CreateSnapshot(
+	ctx context.Context, path, name string) (Snapshot, error) {
+
+	return api.CreateIsiSnapshot(ctx, c.API, c.API.VolumePath(path), name)
 }
 
-func (c *Client) RemoveSnapshot(id int64, name string) error {
-	snapshot, err := c.GetSnapshot(id, name)
+func (c *Client) RemoveSnapshot(
+	ctx context.Context, id int64, name string) error {
+
+	snapshot, err := c.GetSnapshot(ctx, id, name)
 	if err != nil {
 		return err
 	}
 
-	return c.api.RemoveIsiSnapshot(snapshot.Id)
+	return api.RemoveIsiSnapshot(ctx, c.API, snapshot.Id)
 }
 
-func (c *Client) CopySnapshot(sourceId int64, sourceName, destinationName string) (Volume, error) {
-	snapshot, err := c.GetSnapshot(sourceId, sourceName)
+func (c *Client) CopySnapshot(
+	ctx context.Context,
+	sourceId int64, sourceName, destinationName string) (Volume, error) {
+
+	snapshot, err := c.GetSnapshot(ctx, sourceId, sourceName)
 	if err != nil {
 		return nil, err
 	}
 	if snapshot == nil {
-		return nil, errors.New(fmt.Sprintf("Snapshot doesn't exist: (%d, %s)", sourceId, sourceName))
+		return nil, errors.New(fmt.Sprintf(
+			"Snapshot doesn't exist: (%d, %s)", sourceId, sourceName))
 	}
 
-	_, err = c.api.CopyIsiSnapshot(snapshot.Name, c.NameFromPath(snapshot.Path), destinationName)
+	_, err = api.CopyIsiSnapshot(
+		ctx, c.API, snapshot.Name,
+		path.Base(snapshot.Path), destinationName)
 	if err != nil {
 		return nil, err
 	}
 
-	return c.GetVolume(destinationName, destinationName)
-}
-
-func (c *Client) NameFromPath(path string) string {
-	// the name is the last entry in the path
-	tokens := strings.Split(path, "/")
-	return tokens[len(tokens)-1]
+	return c.GetVolume(ctx, destinationName, destinationName)
 }

@@ -1,16 +1,13 @@
 package goisilon
 
-var client *Client
-var err error
+import (
+	"testing"
 
-func init() {
-	testClient()
-}
+	"github.com/stretchr/testify/assert"
+)
 
-func testClient() error {
-	client, err = NewClient()
-	if err != nil {
-		panic(err)
-	}
-	return nil
+func TestNewClient(t *testing.T) {
+	assert.NotNil(t, client)
+	assert.NotZero(t, client.API.APIVersion())
+	t.Logf("api version=%d", client.API.APIVersion())
 }

@@ -5,17 +5,13 @@ import (
 	"testing"
 )
 
-func init() {
-	testClient()
-}
-
 func TestGetVolumes(*testing.T) {
 	volumeName1 := "test_get_volumes_name1"
 	volumeName2 := "test_get_volumes_name2"
 
 	// identify all volumes on the cluster
 	volumeMap := make(map[string]bool)
-	volumes, err := client.GetVolumes()
+	volumes, err := client.GetVolumes(defaultCtx)
 	if err != nil {
 		panic(err)
 	}
@@ -25,20 +21,20 @@ func TestGetVolumes(*testing.T) {
 	initialVolumeCount := len(volumes)
 
 	// Add the test volumes
-	testVolume1, err := client.CreateVolume(volumeName1)
+	testVolume1, err := client.CreateVolume(defaultCtx, volumeName1)
 	if err != nil {
 		panic(err)
 	}
-	testVolume2, err := client.CreateVolume(volumeName2)
+	testVolume2, err := client.CreateVolume(defaultCtx, volumeName2)
 	if err != nil {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.DeleteVolume(volumeName1)
-	defer client.DeleteVolume(volumeName2)
+	defer client.DeleteVolume(defaultCtx, volumeName1)
+	defer client.DeleteVolume(defaultCtx, volumeName2)
 
 	// get the updated volume list
-	volumes, err = client.GetVolumes()
+	volumes, err = client.GetVolumes(defaultCtx)
 	if err != nil {
 		panic(err)
 	}
@@ -74,21 +70,21 @@ func TestGetCreateVolume(*testing.T) {
 	volumeName := "test_get_create_volume_name"
 
 	// make sure the volume doesn't exist yet
-	volume, err := client.GetVolume(volumeName, volumeName)
+	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
 	if err == nil && volume != nil {
 		panic(fmt.Sprintf("Volume (%s) already exists.\n", volumeName))
 	}
 
 	// Add the test volume
-	testVolume, err := client.CreateVolume(volumeName)
+	testVolume, err := client.CreateVolume(defaultCtx, volumeName)
 	if err != nil {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.DeleteVolume(testVolume.Name)
+	defer client.DeleteVolume(defaultCtx, testVolume.Name)
 
 	// get the new volume
-	volume, err = client.GetVolume(volumeName, volumeName)
+	volume, err = client.GetVolume(defaultCtx, volumeName, volumeName)
 	if err != nil {
 		panic(err)
 	}
@@ -104,8 +100,8 @@ func TestDeleteVolume(*testing.T) {
 	volumeName := "test_remove_volume_name"
 
 	// make sure the volume exists
-	client.CreateVolume(volumeName)
-	volume, err := client.GetVolume(volumeName, volumeName)
+	client.CreateVolume(defaultCtx, volumeName)
+	volume, err := client.GetVolume(defaultCtx, volumeName, volumeName)
 	if err != nil {
 		panic(err)
 	}
@@ -114,13 +110,13 @@ func TestDeleteVolume(*testing.T) {
 	}
 
 	// remove the volume
-	err = client.DeleteVolume(volumeName)
+	err = client.DeleteVolume(defaultCtx, volumeName)
 	if err != nil {
 		panic(err)
 	}
 
 	// make sure the volume was removed
-	volume, err = client.GetVolume(volumeName, volumeName)
+	volume, err = client.GetVolume(defaultCtx, volumeName, volumeName)
 	if err == nil {
 		panic(fmt.Sprintf("Attempting to get a removed volume should return an error but returned nil"))
 	}
@@ -137,30 +133,32 @@ func TestCopyVolume(*testing.T) {
 	destinationSubDirectoryPath := fmt.Sprintf("%s/%s", destinationVolumeName, subDirectoryName)
 
 	// make sure the destination volume doesn't exist yet
-	destinationVolume, err := client.GetVolume(destinationVolumeName, destinationVolumeName)
+	destinationVolume, err := client.GetVolume(
+		defaultCtx, destinationVolumeName, destinationVolumeName)
 	if err == nil && destinationVolume != nil {
 		panic(fmt.Sprintf("Volume (%s) already exists.\n", destinationVolumeName))
 	}
 
 	// Add the test volume
-	sourceTestVolume, err := client.CreateVolume(sourceVolumeName)
+	sourceTestVolume, err := client.CreateVolume(defaultCtx, sourceVolumeName)
 	if err != nil {
 		panic(err)
 	}
 	// make sure we clean up when we're done
-	defer client.DeleteVolume(sourceTestVolume.Name)
+	defer client.DeleteVolume(defaultCtx, sourceTestVolume.Name)
 	// add a sub directory to the source volume
-	_, err = client.CreateVolume(sourceSubDirectoryPath)
+	_, err = client.CreateVolume(defaultCtx, sourceSubDirectoryPath)
 	if err != nil {
 		panic(err)
 	}
 
 	// copy the source volume to the test volume
-	destinationTestVolume, err := client.CopyVolume(sourceVolumeName, destinationVolumeName)
+	destinationTestVolume, err := client.CopyVolume(
+		defaultCtx, sourceVolumeName, destinationVolumeName)
 	if err != nil {
 		panic(err)
 	}
-	defer client.DeleteVolume(destinationTestVolume.Name)
+	defer client.DeleteVolume(defaultCtx, destinationTestVolume.Name)
 	// verify the copied volume is the same as the source volume
 	if destinationTestVolume == nil {
 		panic(fmt.Sprintf("Destination volume (%s) was not created.\n", destinationVolumeName))
@@ -169,7 +167,8 @@ func TestCopyVolume(*testing.T) {
 		panic(fmt.Sprintf("Destination volume name not set properly.  Expected: (%s) Actual: (%s)\n", destinationVolumeName, destinationTestVolume.Name))
 	}
 	// make sure the destination volume contains the sub-directory
-	subTestVolume, err := client.GetVolume("", destinationSubDirectoryPath)
+	subTestVolume, err := client.GetVolume(
+		defaultCtx, "", destinationSubDirectoryPath)
 	if err != nil {
 		panic(err)
 	}
@@ -185,7 +184,7 @@ func TestCopyVolume(*testing.T) {
 
 func TestExportVolume(*testing.T) {
 	// TODO: Make this more robust
-	err := client.ExportVolume("testing")
+	_, err := client.ExportVolume(defaultCtx, "testing")
 	if err != nil {
 		panic(err)
 	}
@@ -194,7 +193,7 @@ func TestExportVolume(*testing.T) {
 
 func TestUnexportVolume(*testing.T) {
 	// TODO: Make this more robust
-	err := client.UnexportVolume("testing")
+	err := client.UnexportVolume(defaultCtx, "testing")
 	if err != nil {
 		panic(err)
 	}
@@ -203,12 +202,12 @@ func TestUnexportVolume(*testing.T) {
 
 func TestPath(*testing.T) {
 	// TODO: Make this more robust
-	fmt.Println(client.Path("testing"))
+	fmt.Println(client.API.VolumePath("testing"))
 }
 
 func TestGetVolumeExports(*testing.T) {
 	// TODO: Make this more robust
-	volumeExports, err := client.GetVolumeExports()
+	volumeExports, err := client.GetVolumeExports(defaultCtx)
 	if err != nil {
 		panic(err)
 	}
