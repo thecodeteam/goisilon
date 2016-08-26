@@ -4,37 +4,22 @@ import (
 	"os"
 	"strconv"
 
-	papi "github.com/emccode/goisilon/api/v1"
+	"golang.org/x/net/context"
+
+	"github.com/emccode/goisilon/api"
 )
 
-func NamespacePath(p string) {
-	papi.NamespacePath = p
-}
-func VolumesPath(p string) {
-	papi.VolumesPath = p
-}
-func ExportsPath(p string) {
-	papi.ExportsPath = p
-}
-func QuotaPath(p string) {
-	papi.QuotaPath = p
-}
-func SnapshotsPath(p string) {
-	papi.SnapshotsPath = p
-}
-func VolumeSnapshotsPath(p string) {
-	papi.VolumeSnapshotsPath = p
+// Client is an Isilon client.
+type Client struct {
+
+	// API is the underlying OneFS API client.
+	API api.Client
 }
 
-type Client1 struct {
-	api *papi.PapiConnection
-}
-
-type Client Client1
-
-func NewClient() (*Client, error) {
+func NewClient(ctx context.Context) (*Client, error) {
 	insecure, _ := strconv.ParseBool(os.Getenv("GOISILON_INSECURE"))
 	return NewClientWithArgs(
+		ctx,
 		os.Getenv("GOISILON_ENDPOINT"),
 		insecure,
 		os.Getenv("GOISILON_USERNAME"),
@@ -44,14 +29,16 @@ func NewClient() (*Client, error) {
 }
 
 func NewClientWithArgs(
+	ctx context.Context,
 	endpoint string,
 	insecure bool,
-	username, group, password, volumePath string) (*Client, error) {
+	user, group, pass, volumePath string) (*Client, error) {
 
-	api, err := papi.New(endpoint, insecure, username, group, password, volumePath)
+	client, err := api.NewWithVolumesPath(
+		ctx, endpoint, user, pass, group, insecure, volumePath)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{api}, nil
+	return &Client{client}, err
 }

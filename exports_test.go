@@ -1,91 +1,119 @@
 package goisilon
 
 import (
-	"fmt"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
-func init() {
-	testClient()
+func assertNoError(t *testing.T, err error) {
+	if !assert.NoError(t, err) {
+		t.Error(err)
+		t.FailNow()
+	}
 }
 
-// Test GetIsiExports()
-func TestGetIsiExports(*testing.T) {
+func assertNil(t *testing.T, i interface{}) {
+	if !assert.Nil(t, i) {
+		t.FailNow()
+	}
+}
+
+func assertNotNil(t *testing.T, i interface{}) {
+	if !assert.NotNil(t, i) {
+		t.FailNow()
+	}
+}
+
+func TestExportsList(t *testing.T) {
 	volumeName1 := "test_get_exports1"
 	volumeName2 := "test_get_exports2"
 	volumeName3 := "test_get_exports3"
-	volumePath1 := client.Path(volumeName1)
-	volumePath2 := client.Path(volumeName2)
-	volumePath3 := client.Path(volumeName3)
 
 	// Identify all exports currently on the cluster
 	exportMap := make(map[int]string)
-	exports, err := client.GetIsiExports()
-	if err != nil {
-		panic(err)
-	}
+	exports, err := client.GetExports(context.Background())
+	assertNoError(t, err)
+
 	for _, export := range exports {
-		exportMap[export.Id] = export.Paths[0]
+		exportMap[export.ID] = (*export.Paths)[0]
 	}
 	initialExportCount := len(exports)
+
+	var (
+		vol      Volume
+		exportID int
+	)
+
 	// Add the test exports
-	_, err = client.CreateVolume(volumeName1)
-	if err != nil {
-		panic(err)
-	}
-	_, err = client.CreateVolume(volumeName2)
-	if err != nil {
-		panic(err)
-	}
-	_, err = client.CreateVolume(volumeName3)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName1)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName2)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName3)
-	if err != nil {
-		panic(err)
-	}
+	vol, err = client.CreateVolume(defaultCtx, volumeName1)
+	assertNoError(t, err)
+	assertNotNil(t, vol)
+	volumeName1 = vol.Name
+	volumePath1 := client.API.VolumePath(volumeName1)
+	t.Logf("created volume: %s", volumeName1)
+
+	vol, err = client.CreateVolume(defaultCtx, volumeName2)
+	assertNoError(t, err)
+	assertNotNil(t, vol)
+	volumeName2 = vol.Name
+	volumePath2 := client.API.VolumePath(volumeName2)
+	t.Logf("created volume: %s", volumeName2)
+
+	vol, err = client.CreateVolume(defaultCtx, volumeName3)
+	assertNoError(t, err)
+	assertNotNil(t, vol)
+	volumeName3 = vol.Name
+	volumePath3 := client.API.VolumePath(volumeName3)
+	t.Logf("created volume: %s", volumeName3)
+
+	exportID, err = client.Export(defaultCtx, volumeName1)
+	assertNoError(t, err)
+	t.Logf("created export: %d", exportID)
+
+	exportID, err = client.Export(defaultCtx, volumeName2)
+	assertNoError(t, err)
+	t.Logf("created export: %d", exportID)
+
+	exportID, err = client.Export(defaultCtx, volumeName3)
+	assertNoError(t, err)
+	t.Logf("created export: %d", exportID)
+
 	// make sure we clean up when we're done
-	defer client.Unexport(volumeName1)
-	defer client.Unexport(volumeName2)
-	defer client.Unexport(volumeName3)
-	defer client.DeleteVolume(volumeName1)
-	defer client.DeleteVolume(volumeName2)
-	defer client.DeleteVolume(volumeName3)
+	defer client.Unexport(defaultCtx, volumeName1)
+	defer client.Unexport(defaultCtx, volumeName2)
+	defer client.Unexport(defaultCtx, volumeName3)
+	defer client.DeleteVolume(defaultCtx, volumeName1)
+	defer client.DeleteVolume(defaultCtx, volumeName2)
+	defer client.DeleteVolume(defaultCtx, volumeName3)
 
 	// Get the updated export list
-	exports, err = client.GetIsiExports()
-	if err != nil {
-		panic(err)
-	}
+	exports, err = client.GetExports(defaultCtx)
+	assertNoError(t, err)
 
 	// Verify that the new exports are there as well as all the old exports.
-	if len(exports) != initialExportCount+3 {
-		panic(fmt.Sprintf("Incorrect number of exports.  Expected: %d Actual: %d", initialExportCount+3, len(exports)))
+	if !assert.Equal(t, initialExportCount+3, len(exports)) {
+		t.FailNow()
 	}
+
 	// Remove the original exports and add the new ones.  In the end, we should only have the
 	// exports we just created and nothing more.
 	for _, export := range exports {
-		if _, found := exportMap[export.Id]; found == true {
+		if _, found := exportMap[export.ID]; found == true {
 			// this export was exported prior to the test start
-			delete(exportMap, export.Id)
+			delete(exportMap, export.ID)
 		} else {
 			// this export is new
-			exportMap[export.Id] = export.Paths[0]
+			exportMap[export.ID] = (*export.Paths)[0]
 		}
 	}
-	if len(exportMap) != 3 {
-		panic(fmt.Sprintf("Incorrect number of new exports.  Exptected: 3 Actual: %d", len(exportMap)))
+
+	if !assert.Len(t, exportMap, 3) {
+		t.FailNow()
 	}
+
 	volumeBitmap := 0
 	for _, path := range exportMap {
 		if path == volumePath1 {
@@ -96,253 +124,430 @@ func TestGetIsiExports(*testing.T) {
 			volumeBitmap += 4
 		}
 	}
-	if volumeBitmap != 7 {
-		panic(fmt.Sprintf("Incorrect new exports: %v", exportMap))
-	}
+
+	assert.Equal(t, 7, volumeBitmap)
 }
 
-// Test Export()
-func TestCreateExport(*testing.T) {
+func TestExportCreate(t *testing.T) {
 	volumeName := "test_create_export"
-	volumePath := client.Path(volumeName)
+	volumePath := client.API.VolumePath(volumeName)
 
 	// setup the test
-	_, err := client.CreateVolume(volumeName)
-	if err != nil {
-		panic(err)
-	}
+	_, err := client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
 	// make sure we clean up when we're done
-	defer client.Unexport(volumeName)
-	defer client.DeleteVolume(volumeName)
+	defer client.Unexport(defaultCtx, volumeName)
+	defer client.DeleteVolume(defaultCtx, volumeName)
+
 	// verify the volume isn't already exported
-	export, err := client.GetIsiExport(volumeName, volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to query volume (%s) to be exported.  Error: %v", volumeName, err))
-	}
-	if export != nil {
-		panic(fmt.Sprintf("Volume is already exported (%s)", volumeName))
-	}
+	export, err := client.GetExportByName(defaultCtx, volumeName)
+	assertNoError(t, err)
+	assertNil(t, export)
 
 	// export the volume
-	err = client.Export(volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Error exporting volume (%s).  Error: %v", volumeName, err))
-	}
+	_, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
 
 	// verify the volume has been exported
-	export, err = client.GetIsiExport(volumeName, volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to query volume (%s) after exporting.  Error: %v", volumeName, err))
-	}
-	if export == nil {
-		panic(fmt.Sprintf("Volume was not exported (%s)", volumeName))
-	}
+	export, err = client.GetExportByName(defaultCtx, volumeName)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
 	found := false
-	for _, path := range export.Paths {
+	for _, path := range *export.Paths {
 		if path == volumePath {
 			found = true
 			break
 		}
 	}
-	if found == false {
-		panic(fmt.Sprintf("Export does not include volume path. Expected: %s Actual: %v", volumePath, export))
-	}
+	assert.True(t, found)
 }
 
-// Test Unexport()
-func TestRemoveExport(*testing.T) {
+func TestExportDelete(t *testing.T) {
 	volumeName := "test_unexport_volume"
 
 	// initialize the export
-	_, err := client.CreateVolume(volumeName)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName)
-	if err != nil {
-		panic(err)
-	}
+	_, err := client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	_, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
+
 	// make sure we clean up when we're done
-	defer client.DeleteVolume(volumeName)
+	defer client.DeleteVolume(defaultCtx, volumeName)
 
 	// verify the volume is exported
-	export, err := client.GetIsiExport(volumeName, volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to query volume (%s) to be exported.  Error: %v", volumeName, err))
-	}
-	if export == nil {
-		panic(fmt.Sprintf("Volume wasn't exported (%s)", volumeName))
-	}
+	export, err := client.GetExportByName(defaultCtx, volumeName)
+	assertNoError(t, err)
+	assertNotNil(t, export)
 
 	// Unexport the volume
-	err = client.Unexport(volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Error Unexporting volume (%s).  Error: %v", volumeName, err))
-	}
+	err = client.Unexport(defaultCtx, volumeName)
+	assertNoError(t, err)
 
 	// verify the volume is no longer exported
-	export, err = client.GetIsiExport(volumeName, volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Unable to query volume (%s) after exporting.  Error: %v", volumeName, err))
-	}
-	if export != nil {
-		panic(fmt.Sprintf("Volume is still exported (%s)", volumeName))
-	}
+	export, err = client.GetExportByName(defaultCtx, volumeName)
+	assertNoError(t, err)
+	assertNil(t, export)
 }
 
-// Test GetExportClients()
-func TestGetExportClients(*testing.T) {
-	volumeName := "test_get_export_clients"
-	clientList := []string{"1.2.3.4", "1.2.3.5"}
+func TestExportRootMapping(t *testing.T) {
+
+	var (
+		err        error
+		exportID   int
+		rootMap    UserMapping
+		volumeName = "test_export_root_mapping"
+	)
 
 	// initialize the export
-	_, err := client.CreateVolume(volumeName)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName)
-	if err != nil {
-		panic(err)
-	}
+	_, err = client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	exportID, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
+
 	// make sure we clean up when we're done
-	defer client.Unexport(volumeName)
-	defer client.DeleteVolume(volumeName)
-	// set the export client
-	err = client.SetExportClients(volumeName, clientList)
-	if err != nil {
-		panic(err)
+	defer client.UnexportByID(defaultCtx, exportID)
+	defer client.DeleteVolume(defaultCtx, volumeName)
+
+	// verify the existing root mapping is mapped to nobody
+	rootMap, err = client.GetRootMappingByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, rootMap)
+	assertNotNil(t, rootMap.User)
+	assertNotNil(t, rootMap.User.ID)
+	assertNotNil(t, rootMap.User.ID.ID)
+	assert.Equal(t, "nobody", rootMap.User.ID.ID)
+
+	// update the root mapping to root
+	err = client.EnableRootMappingByID(defaultCtx, exportID, "root")
+	assertNoError(t, err)
+
+	// verify the root mapping is mapped to root
+	rootMap, err = client.GetRootMappingByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, rootMap)
+	assertNotNil(t, rootMap.User)
+	assertNotNil(t, rootMap.User.ID)
+	assertNotNil(t, rootMap.User.ID.ID)
+	assert.Equal(t, "root", rootMap.User.ID.ID)
+
+	// disable the root mapping
+	err = client.DisableRootMappingByID(defaultCtx, exportID)
+	assertNoError(t, err)
+
+	// verify the root mapping is disabled
+	rootMap, err = client.GetRootMappingByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, rootMap.Enabled)
+	assert.False(t, *rootMap.Enabled)
+}
+
+var (
+	getClients = func(ctx context.Context, e Export) []string {
+		return *e.Clients
 	}
+	getRootClients = func(ctx context.Context, e Export) []string {
+		return *e.RootClients
+	}
+)
+
+func TestExportClientsGet(t *testing.T) {
+	testExportClientsGet(
+		t,
+		"test_get_export_clients",
+		client.GetExportClientsByID,
+		client.SetExportClientsByID)
+}
+
+func TestExportClientsSet(t *testing.T) {
+	testExportClientsSet(
+		t,
+		"test_set_export_clients",
+		getClients,
+		client.SetExportClientsByID)
+}
+
+func TestExportClientsAdd(t *testing.T) {
+	testExportClientsAdd(
+		t,
+		"test_add_export_clients",
+		getClients,
+		client.SetExportClientsByID,
+		client.AddExportClientsByID)
+}
+
+func TestExportClientsClear(t *testing.T) {
+	testExportClientsClear(
+		t,
+		"test_clear_export_clients",
+		getClients,
+		client.SetExportClientsByID,
+		client.ClearExportClientsByID)
+}
+
+func TestExportRootClientsGet(t *testing.T) {
+	testExportClientsGet(
+		t,
+		"test_get_export_root_clients",
+		client.GetExportRootClientsByID,
+		client.SetExportRootClientsByID)
+}
+
+func TestExportRootClientsSet(t *testing.T) {
+	testExportClientsSet(
+		t,
+		"test_set_export_root_clients",
+		getRootClients,
+		client.SetExportRootClientsByID)
+}
+
+func TestExportRootClientsAdd(t *testing.T) {
+	testExportClientsAdd(
+		t,
+		"test_add_export_root_clients",
+		getRootClients,
+		client.SetExportRootClientsByID,
+		client.AddExportRootClientsByID)
+}
+
+func TestExportRootClientsClear(t *testing.T) {
+	testExportClientsClear(
+		t,
+		"test_clear_export_root_clients",
+		getRootClients,
+		client.SetExportRootClientsByID,
+		client.ClearExportRootClientsByID)
+}
+
+func testExportClientsGet(
+	t *testing.T,
+	volumeName string,
+	getClients func(ctx context.Context, id int) ([]string, error),
+	setClients func(ctx context.Context, id int, clients ...string) error) {
+
+	var (
+		err            error
+		exportID       int
+		clientList     = []string{"1.2.3.4", "1.2.3.5"}
+		currentClients []string
+	)
+
+	// initialize the export
+	_, err = client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	exportID, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	// make sure we clean up when we're done
+	defer client.UnexportByID(defaultCtx, exportID)
+	defer client.DeleteVolume(defaultCtx, volumeName)
+
+	// set the export client
+	err = setClients(defaultCtx, exportID, clientList...)
+	assertNoError(t, err)
 
 	// test getting the client list
-	currentClients, err := client.GetExportClients(volumeName)
-	if err != nil {
-		panic(fmt.Sprintf("Unexpected error in GetExportClients: %v", err))
-	}
+	currentClients, err = getClients(defaultCtx, exportID)
+	assertNoError(t, err)
+
 	// verify we received the correct clients
-	if len(currentClients) != len(clientList) {
-		panic(fmt.Sprintf("Unexpected number of clients returned.  Expected: %d Actual: %d", len(clientList), len(currentClients)))
-	}
+	assert.Equal(t, len(clientList), len(currentClients))
+
 	sort.Strings(currentClients)
 	sort.Strings(clientList)
+
 	for i := range currentClients {
-		if currentClients[i] != clientList[i] {
-			panic(fmt.Sprintf("Unexpected client returned.  Expected: %v Actual: %v", clientList, currentClients))
-		}
+		assert.Equal(t, currentClients[i], clientList[i])
 	}
 }
 
-// Test SetExportClients()
-func TestSetExportClients(*testing.T) {
-	volumeName := "test_set_export"
-	volumePath := client.Path(volumeName)
-	clientList := []string{"1.2.3.4", "1.2.3.5"}
+func testExportClientsSet(
+	t *testing.T,
+	volumeName string,
+	getClients func(ctx context.Context, e Export) []string,
+	setClients func(ctx context.Context, id int, clients ...string) error) {
+
+	var (
+		err            error
+		export         Export
+		exportID       int
+		currentClients []string
+		clientList     = []string{"1.2.3.4", "1.2.3.5"}
+	)
+
+	sort.Strings(clientList)
 
 	// initialize the export
-	_, err := client.CreateVolume(volumeName)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName)
-	if err != nil {
-		panic(err)
-	}
+	_, err = client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	exportID, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
+
 	// make sure we clean up when we're done
-	defer client.Unexport(volumeName)
-	defer client.DeleteVolume(volumeName)
+	defer client.UnexportByID(defaultCtx, exportID)
+	defer client.DeleteVolume(defaultCtx, volumeName)
+
 	// verify we aren't already exporting the volume to any of the clients
-	exports, err := client.GetIsiExports()
-	for _, export := range exports {
-		if export.Paths[0] == volumePath {
-			for _, currentClient := range export.Clients {
-				for _, newClient := range clientList {
-					if currentClient == newClient {
-						panic(fmt.Sprintf("Volume already exporting to %s: %v", newClient, export.Clients))
-					}
-				}
-			}
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	for _, currentClient := range getClients(defaultCtx, export) {
+		for _, newClient := range clientList {
+			assert.NotEqual(t, currentClient, newClient)
 		}
 	}
 
 	// test setting the export client
-	err = client.SetExportClients(volumeName, clientList)
-	if err != nil {
-		panic(err)
-	}
+	err = setClients(defaultCtx, exportID, clientList...)
+	assertNoError(t, err)
 
 	// verify the export client was set
-	sort.Strings(clientList)
-	exports, err = client.GetIsiExports()
-	for _, export := range exports {
-		if export.Paths[0] == volumePath {
-			// verify we received the correct clients
-			if len(export.Clients) != len(clientList) {
-				panic(fmt.Sprintf("Unexpected number of clients returned.  Expected: %d Actual: %d", len(clientList), len(export.Clients)))
-			}
-			sort.Strings(export.Clients)
-			for i := range export.Clients {
-				if export.Clients[i] != clientList[i] {
-					panic(fmt.Sprintf("Unexpected client returned.  Expected: %v Actual: %v", clientList, export.Clients))
-				}
-			}
-			// clients match so return.
-			return
-		}
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	currentClients = getClients(defaultCtx, export)
+	assert.Equal(t, len(clientList), len(currentClients))
+
+	sort.Strings(currentClients)
+	for i := range currentClients {
+		assert.Equal(t, currentClients[i], clientList[i])
 	}
-	panic(fmt.Sprintf("Volume %s not found in export list", volumePath))
 }
 
-// Test ClearExportClients()
-func TestClearExportClients(*testing.T) {
-	volumeName := "test_clear_export"
-	volumePath := client.Path(volumeName)
-	clientList := []string{"1.2.3.4", "1.2.3.5"}
+func testExportClientsAdd(
+	t *testing.T,
+	volumeName string,
+	getClients func(ctx context.Context, e Export) []string,
+	setClients func(ctx context.Context, id int, clients ...string) error,
+	addClients func(ctx context.Context, id int, clients ...string) error) {
+
+	var (
+		err            error
+		export         Export
+		exportID       int
+		currentClients []string
+		clientList     = []string{"1.2.3.4", "1.2.3.5"}
+		addedClients   = []string{"1.2.3.6", "1.2.3.7"}
+		allClients     = append(clientList, addedClients...)
+	)
+
+	sort.Strings(clientList)
+	sort.Strings(allClients)
 
 	// initialize the export
-	_, err := client.CreateVolume(volumeName)
-	if err != nil {
-		panic(err)
-	}
-	err = client.Export(volumeName)
-	if err != nil {
-		panic(err)
-	}
+	_, err = client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	exportID, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
+
 	// make sure we clean up when we're done
-	defer client.Unexport(volumeName)
-	defer client.DeleteVolume(volumeName)
-	// verify we are exporting the volume
-	err = client.SetExportClients(volumeName, clientList)
-	if err != nil {
-		panic(err)
-	}
-	exports, err := client.GetIsiExports()
-	sort.Strings(clientList)
-	for _, export := range exports {
-		if export.Paths[0] == volumePath {
-			if len(export.Clients) != len(clientList) {
-				panic(fmt.Sprintf("Unexpected number of clients returned.  Expected: %d Actual: %d", len(clientList), len(export.Clients)))
-			}
-			sort.Strings(export.Clients)
-			for i := range export.Clients {
-				if export.Clients[i] != clientList[i] {
-					panic(fmt.Sprintf("Unexpected client returned.  Expected: %v Actual: %v", clientList, export.Clients))
-				}
-			}
+	defer client.UnexportByID(defaultCtx, exportID)
+	defer client.DeleteVolume(defaultCtx, volumeName)
+
+	// verify we aren't already exporting the volume to any of the clients
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	for _, currentClient := range getClients(defaultCtx, export) {
+		for _, newClient := range clientList {
+			assert.NotEqual(t, currentClient, newClient)
 		}
+	}
+
+	// test setting the export client
+	err = setClients(defaultCtx, exportID, clientList...)
+	assertNoError(t, err)
+
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	currentClients = getClients(defaultCtx, export)
+	assert.Equal(t, len(clientList), len(currentClients))
+
+	sort.Strings(currentClients)
+	for i := range currentClients {
+		assert.Equal(t, currentClients[i], clientList[i])
+	}
+
+	// verify that added clients are added to the list
+	err = addClients(defaultCtx, exportID, addedClients...)
+	assertNoError(t, err)
+
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	currentClients = getClients(defaultCtx, export)
+	assert.Equal(t, len(allClients), len(currentClients))
+
+	sort.Strings(currentClients)
+	for i := range currentClients {
+		assert.Equal(t, currentClients[i], allClients[i])
+	}
+}
+
+func testExportClientsClear(
+	t *testing.T,
+	volumeName string,
+	getClients func(ctx context.Context, e Export) []string,
+	setClients func(ctx context.Context, id int, clients ...string) error,
+	nilClients func(ctx context.Context, id int) error) {
+
+	var (
+		err            error
+		export         Export
+		exportID       int
+		currentClients []string
+		clientList     = []string{"1.2.3.4", "1.2.3.5"}
+	)
+
+	sort.Strings(clientList)
+
+	// initialize the export
+	_, err = client.CreateVolume(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	exportID, err = client.Export(defaultCtx, volumeName)
+	assertNoError(t, err)
+
+	// make sure we clean up when we're done
+	defer client.UnexportByID(defaultCtx, exportID)
+	defer client.DeleteVolume(defaultCtx, volumeName)
+
+	// verify we are exporting the volume
+	err = setClients(defaultCtx, exportID, clientList...)
+	assertNoError(t, err)
+
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	currentClients = getClients(defaultCtx, export)
+	assert.Equal(t, len(clientList), len(currentClients))
+
+	sort.Strings(currentClients)
+	for i := range currentClients {
+		assert.Equal(t, currentClients[i], clientList[i])
 	}
 
 	// test clearing the export client
-	err = client.ClearExportClients(volumeName)
-	if err != nil {
-		panic(err)
-	}
+	err = nilClients(defaultCtx, exportID)
+	assertNoError(t, err)
 
 	// verify the export client was cleared
-	exports, err = client.GetIsiExports()
-	for _, export := range exports {
-		if export.Paths[0] == volumePath {
-			if len(export.Clients) > 0 {
-				panic(fmt.Sprintf("Unexpected client address.  Expected: () Actual: (%s)", export.Clients[0]))
-			}
-		}
-	}
+	export, err = client.GetExportByID(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, export)
+
+	assert.Len(t, getClients(defaultCtx, export), 0)
 }
