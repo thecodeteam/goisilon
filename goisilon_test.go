@@ -4,8 +4,9 @@ import (
 	"os"
 	"testing"
 
+	"github.com/Sirupsen/logrus"
 	log "github.com/emccode/gournal"
-	"github.com/emccode/gournal/logrus"
+	glogrus "github.com/emccode/gournal/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -24,13 +25,16 @@ func init() {
 	defaultCtx = context.WithValue(
 		defaultCtx,
 		log.AppenderKey(),
-		logrus.New())
+		glogrus.NewWithOptions(
+			logrus.StandardLogger().Out,
+			logrus.DebugLevel,
+			logrus.StandardLogger().Formatter))
 }
 
 func TestMain(m *testing.M) {
 	client, err = NewClient(defaultCtx)
 	if err != nil {
-		panic(err)
+		log.WithError(err).Panic(defaultCtx, "error creating test client")
 	}
 	os.Exit(m.Run())
 }
