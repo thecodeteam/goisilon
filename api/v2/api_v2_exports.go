@@ -1,71 +1,25 @@
 package v2
 
 import (
-	"encoding/json"
 	"errors"
 	"strconv"
 
 	"golang.org/x/net/context"
 
 	"github.com/emccode/goisilon/api"
+	"github.com/emccode/goisilon/api/json"
 )
 
 // Export is an Isilon Export.
 type Export struct {
-	ID          int          `json:"-"`
+	ID          int          `json:"id,omitmarshal"`
 	Paths       *[]string    `json:"paths,omitempty"`
 	Clients     *[]string    `json:"clients,omitempty"`
 	RootClients *[]string    `json:"root_clients,omitempty"`
 	MapAll      *UserMapping `json:"map_all,omitempty"`
-	MapNonRoot  *UserMapping `json:"map_non_root,omitempty"`
 	MapRoot     *UserMapping `json:"map_root,omitempty"`
-}
-
-type export struct {
-	ID          *int         `json:"id,omitempty"`
-	Paths       *[]string    `json:"paths,omitempty"`
-	Clients     *[]string    `json:"clients,omitempty"`
-	RootClients *[]string    `json:"root_clients,omitempty"`
-	MapAll      *UserMapping `json:"map_all,omitempty"`
 	MapNonRoot  *UserMapping `json:"map_non_root,omitempty"`
-	MapRoot     *UserMapping `json:"map_root,omitempty"`
-}
-
-func isNilUserMapping(um *UserMapping) bool {
-	return um == nil || (um.Enabled == nil && um.PrimaryGroup == nil &&
-		um.SecondaryGroup == nil && um.User == nil)
-}
-
-// UnmarshalJSON unmarshals a Export from JSON.
-func (e *Export) UnmarshalJSON(data []byte) error {
-
-	if isEmptyJSON(&data) {
-		return nil
-	}
-
-	var pe export
-	if err := json.Unmarshal(data, &pe); err != nil {
-		return nil
-	}
-
-	if pe.ID != nil {
-		e.ID = *pe.ID
-	}
-	e.Paths = pe.Paths
-	e.Clients = pe.Clients
-	e.RootClients = pe.RootClients
-
-	if !isNilUserMapping(pe.MapAll) {
-		e.MapAll = pe.MapAll
-	}
-	if !isNilUserMapping(pe.MapNonRoot) {
-		e.MapNonRoot = pe.MapNonRoot
-	}
-	if !isNilUserMapping(pe.MapRoot) {
-		e.MapRoot = pe.MapRoot
-	}
-
-	return nil
+	MapFailure  *UserMapping `json:"map_failure,omitempty"`
 }
 
 // ExportList is a list of Isilon Exports.
