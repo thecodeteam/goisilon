@@ -1,17 +1,35 @@
 package v2
 
 import (
-	"encoding/json"
+	"fmt"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/emccode/goisilon/api/json"
 )
 
-func TestExportMarshal(t *testing.T) {
+func TestExportEncodeJSON(t *testing.T) {
 	clients := []string{}
 	ex := &Export{ID: 3, Clients: &clients}
-	buf, _ := json.Marshal(ex)
-	t.Logf("TestExportMarshal.Marshal=%s", string(buf))
+	buf, err := json.Marshal(ex)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := string(buf)
+	if !assert.Equal(t, `{"clients":[]}`, s) {
+		t.FailNow()
+	}
+	t.Log(s)
+}
+func TestExportDecodeJSON(t *testing.T) {
+	j := `{"id":3,"clients":[]}`
+	var ex Export
+	if err := json.Unmarshal([]byte(j), &ex); err != nil {
+		t.Fatal(err)
+	}
+	fmt.Fprintf(os.Stdout, "%+v\n", ex)
 }
 
 func TestPersonaIDTypeMarshal(t *testing.T) {

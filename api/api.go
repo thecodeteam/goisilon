@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"io"
 	"net/http"
@@ -18,6 +17,8 @@ import (
 	log "github.com/emccode/gournal"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
+
+	"github.com/emccode/goisilon/api/json"
 )
 
 const (
