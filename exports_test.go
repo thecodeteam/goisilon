@@ -192,13 +192,44 @@ func TestExportDelete(t *testing.T) {
 	assertNil(t, export)
 }
 
+func TestExportNonRootMapping(t *testing.T) {
+	testUserMapping(
+		t,
+		"test_export_non_root_mapping",
+		client.GetNonRootMappingByID,
+		client.EnableNonRootMappingByID,
+		client.DisableNonRootMappingByID)
+}
+
+func TestExportFailureMapping(t *testing.T) {
+	testUserMapping(
+		t,
+		"test_export_failure_mapping",
+		client.GetFailureMappingByID,
+		client.EnableFailureMappingByID,
+		client.DisableFailureMappingByID)
+}
+
 func TestExportRootMapping(t *testing.T) {
+	testUserMapping(
+		t,
+		"test_export_root_mapping",
+		client.GetRootMappingByID,
+		client.EnableRootMappingByID,
+		client.DisableRootMappingByID)
+}
+
+func testUserMapping(
+	t *testing.T,
+	volumeName string,
+	getMap func(ctx context.Context, id int) (UserMapping, error),
+	enaMap func(ctx context.Context, id int, user string) error,
+	disMap func(ctx context.Context, id int) error) {
 
 	var (
-		err        error
-		exportID   int
-		rootMap    UserMapping
-		volumeName = "test_export_root_mapping"
+		err      error
+		exportID int
+		userMap  UserMapping
 	)
 
 	// initialize the export
@@ -212,37 +243,37 @@ func TestExportRootMapping(t *testing.T) {
 	defer client.UnexportByID(defaultCtx, exportID)
 	defer client.DeleteVolume(defaultCtx, volumeName)
 
-	// verify the existing root mapping is mapped to nobody
-	rootMap, err = client.GetRootMappingByID(defaultCtx, exportID)
+	// verify the existing mapping is mapped to nobody
+	userMap, err = getMap(defaultCtx, exportID)
 	assertNoError(t, err)
-	assertNotNil(t, rootMap)
-	assertNotNil(t, rootMap.User)
-	assertNotNil(t, rootMap.User.ID)
-	assertNotNil(t, rootMap.User.ID.ID)
-	assert.Equal(t, "nobody", rootMap.User.ID.ID)
+	assertNotNil(t, userMap)
+	assertNotNil(t, userMap.User)
+	assertNotNil(t, userMap.User.ID)
+	assertNotNil(t, userMap.User.ID.ID)
+	assert.Equal(t, "nobody", userMap.User.ID.ID)
 
-	// update the root mapping to root
-	err = client.EnableRootMappingByID(defaultCtx, exportID, "root")
-	assertNoError(t, err)
-
-	// verify the root mapping is mapped to root
-	rootMap, err = client.GetRootMappingByID(defaultCtx, exportID)
-	assertNoError(t, err)
-	assertNotNil(t, rootMap)
-	assertNotNil(t, rootMap.User)
-	assertNotNil(t, rootMap.User.ID)
-	assertNotNil(t, rootMap.User.ID.ID)
-	assert.Equal(t, "root", rootMap.User.ID.ID)
-
-	// disable the root mapping
-	err = client.DisableRootMappingByID(defaultCtx, exportID)
+	// update the user mapping to root
+	err = enaMap(defaultCtx, exportID, "root")
 	assertNoError(t, err)
 
-	// verify the root mapping is disabled
-	rootMap, err = client.GetRootMappingByID(defaultCtx, exportID)
+	// verify the user mapping is mapped to root
+	userMap, err = getMap(defaultCtx, exportID)
 	assertNoError(t, err)
-	assertNotNil(t, rootMap.Enabled)
-	assert.False(t, *rootMap.Enabled)
+	assertNotNil(t, userMap)
+	assertNotNil(t, userMap.User)
+	assertNotNil(t, userMap.User.ID)
+	assertNotNil(t, userMap.User.ID.ID)
+	assert.Equal(t, "root", userMap.User.ID.ID)
+
+	// disable the user mapping
+	err = disMap(defaultCtx, exportID)
+	assertNoError(t, err)
+
+	// verify the user mapping is disabled
+	userMap, err = getMap(defaultCtx, exportID)
+	assertNoError(t, err)
+	assertNotNil(t, userMap.Enabled)
+	assert.False(t, *userMap.Enabled)
 }
 
 var (

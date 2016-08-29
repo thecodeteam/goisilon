@@ -182,6 +182,254 @@ func (c *Client) DisableRootMappingByID(
 	return api.ExportUpdate(ctx, c.API, nex)
 }
 
+// GetNonRootMapping returns the map_non_root mapping for an Export.
+func (c *Client) GetNonRootMapping(
+	ctx context.Context, name string) (UserMapping, error) {
+
+	ex, err := c.GetExportByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if ex == nil {
+		return nil, nil
+	}
+	return ex.MapNonRoot, nil
+}
+
+// GetNonRootMappingByID returns the map_non_root mapping for an Export.
+func (c *Client) GetNonRootMappingByID(
+	ctx context.Context, id int) (UserMapping, error) {
+
+	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if ex == nil {
+		return nil, nil
+	}
+	return ex.MapNonRoot, nil
+}
+
+// EnableNonRootMapping enables the map_non_root mapping for an Export.
+func (c *Client) EnableNonRootMapping(
+	ctx context.Context, name, user string) error {
+
+	ex, err := c.GetExportByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapNonRoot: ex.MapNonRoot}
+
+	setUserMapping(
+		nex,
+		user,
+		true,
+		func(e Export) UserMapping { return e.MapNonRoot },
+		func(e Export, m UserMapping) { e.MapNonRoot = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// EnableNonRootMappingByID enables the map_non_root mapping for an Export.
+func (c *Client) EnableNonRootMappingByID(
+	ctx context.Context, id int, user string) error {
+
+	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapNonRoot: ex.MapNonRoot}
+
+	setUserMapping(
+		nex,
+		user,
+		true,
+		func(e Export) UserMapping { return e.MapNonRoot },
+		func(e Export, m UserMapping) { e.MapNonRoot = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// DisableNonRootMapping disables the map_non_root mapping for an Export.
+func (c *Client) DisableNonRootMapping(
+	ctx context.Context, name string) error {
+
+	ex, err := c.GetExportByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapNonRoot: ex.MapNonRoot}
+
+	setUserMapping(
+		nex,
+		"nobody",
+		false,
+		func(e Export) UserMapping { return e.MapNonRoot },
+		func(e Export, m UserMapping) { e.MapNonRoot = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// DisableNonRootMappingByID disables the map_non_root mapping for an Export.
+func (c *Client) DisableNonRootMappingByID(
+	ctx context.Context, id int) error {
+
+	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapNonRoot: ex.MapNonRoot}
+
+	setUserMapping(
+		nex,
+		"nobody",
+		false,
+		func(e Export) UserMapping { return e.MapNonRoot },
+		func(e Export, m UserMapping) { e.MapNonRoot = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// GetFailureMapping returns the map_failure mapping for an Export.
+func (c *Client) GetFailureMapping(
+	ctx context.Context, name string) (UserMapping, error) {
+
+	ex, err := c.GetExportByName(ctx, name)
+	if err != nil {
+		return nil, err
+	}
+	if ex == nil {
+		return nil, nil
+	}
+	return ex.MapFailure, nil
+}
+
+// GetFailureMappingByID returns the map_failure mapping for an Export.
+func (c *Client) GetFailureMappingByID(
+	ctx context.Context, id int) (UserMapping, error) {
+
+	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if ex == nil {
+		return nil, nil
+	}
+	return ex.MapFailure, nil
+}
+
+// EnableFailureMapping enables the map_failure mapping for an Export.
+func (c *Client) EnableFailureMapping(
+	ctx context.Context, name, user string) error {
+
+	ex, err := c.GetExportByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapFailure: ex.MapFailure}
+
+	setUserMapping(
+		nex,
+		user,
+		true,
+		func(e Export) UserMapping { return e.MapFailure },
+		func(e Export, m UserMapping) { e.MapFailure = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// EnableFailureMappingByID enables the map_failure mapping for an Export.
+func (c *Client) EnableFailureMappingByID(
+	ctx context.Context, id int, user string) error {
+
+	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapFailure: ex.MapFailure}
+
+	setUserMapping(
+		nex,
+		user,
+		true,
+		func(e Export) UserMapping { return e.MapFailure },
+		func(e Export, m UserMapping) { e.MapFailure = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// DisableFailureMapping disables the map_failure mapping for an Export.
+func (c *Client) DisableFailureMapping(
+	ctx context.Context, name string) error {
+
+	ex, err := c.GetExportByName(ctx, name)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapFailure: ex.MapFailure}
+
+	setUserMapping(
+		nex,
+		"nobody",
+		false,
+		func(e Export) UserMapping { return e.MapFailure },
+		func(e Export, m UserMapping) { e.MapFailure = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
+// DisableFailureMappingByID disables the map_failure mapping for an Export.
+func (c *Client) DisableFailureMappingByID(
+	ctx context.Context, id int) error {
+
+	ex, err := c.GetExportByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if ex == nil {
+		return nil
+	}
+
+	nex := &api.Export{ID: ex.ID, MapFailure: ex.MapFailure}
+
+	setUserMapping(
+		nex,
+		"nobody",
+		false,
+		func(e Export) UserMapping { return e.MapFailure },
+		func(e Export, m UserMapping) { e.MapFailure = m })
+
+	return api.ExportUpdate(ctx, c.API, nex)
+}
+
 func setUserMapping(
 	ex Export,
 	user string,
