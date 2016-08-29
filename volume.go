@@ -1,17 +1,13 @@
 package goisilon
 
 import (
+	log "github.com/emccode/gournal"
 	"golang.org/x/net/context"
 
 	api "github.com/emccode/goisilon/api/v1"
 )
 
 type Volume *api.IsiVolume
-type VolumeExport struct {
-	Volume     Volume
-	ExportPath string
-	Clients    []string
-}
 
 //GetVolume returns a specific volume by name or ID
 func (c *Client) GetVolume(
@@ -90,39 +86,61 @@ func (c *Client) UnexportVolume(
 	return c.Unexport(ctx, name)
 }
 
-//GetVolumeExports return a list of volume exports
-func (c *Client) GetVolumeExports(
-	ctx context.Context) ([]*VolumeExport, error) {
-
-	exports, err := c.GetExports(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	exportPaths := make(map[string]bool)
-	exportClients := make(map[string]([]string))
-	for _, export := range exports {
-		for _, path := range *export.Paths {
-			exportPaths[path] = true
-			exportClients[path] = *export.Clients
-		}
-	}
+// GetVolumeExportMap returns a map that relates Volumes to their corresponding
+// Exports. This function uses an Export's "clients" property to define the
+// relationship. The flag "includeRootClients" can be set to "true" in order to
+// also inspect the "root_clients" property of an Export when determining the
+// Volume-to-Export relationship.
+func (c *Client) GetVolumeExportMap(
+	ctx context.Context,
+	includeRootClients bool) (map[Volume]Export, error) {
 
 	volumes, err := c.GetVolumes(ctx)
 	if err != nil {
 		return nil, err
 	}
+	exports, err := c.GetExports(ctx)
+	if err != nil {
+		return nil, err
+	}
 
-	var volumeExports []*VolumeExport
-	for _, volume := range volumes {
-		if _, ok := exportPaths[c.API.VolumePath(volume.Name)]; ok {
-			volumeExports = append(volumeExports, &VolumeExport{
-				Volume:     volume,
-				ExportPath: c.API.VolumePath(volume.Name),
-				Clients:    exportClients[c.API.VolumePath(volume.Name)],
-			})
+	volToExpMap := map[Volume]Export{}
+
+	for _, v := range volumes {
+		vp := c.API.VolumePath(v.Name)
+		for _, e := range exports {
+			if e.Clients == nil {
+				continue
+			}
+			for _, p := range *e.Clients {
+				if vp == p {
+					if _, ok := volToExpMap[v]; ok {
+						log.WithFields(map[string]interface{}{
+							"volumeName": v.Name,
+							"volumePath": vp,
+						}).Info(ctx, "vol-ex client map already defined")
+						break
+					}
+					volToExpMap[v] = e
+				}
+			}
+			if !includeRootClients || e.RootClients == nil {
+				continue
+			}
+			for _, p := range *e.RootClients {
+				if vp == p {
+					if _, ok := volToExpMap[v]; ok {
+						log.WithFields(map[string]interface{}{
+							"volumeName": v.Name,
+							"volumePath": vp,
+						}).Info(ctx, "vol-ex root client map already defined")
+						break
+					}
+					volToExpMap[v] = e
+				}
+			}
 		}
 	}
 
-	return volumeExports, nil
+	return volToExpMap, nil
 }

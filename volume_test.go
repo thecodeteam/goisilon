@@ -205,14 +205,11 @@ func TestPath(*testing.T) {
 	fmt.Println(client.API.VolumePath("testing"))
 }
 
-func TestGetVolumeExports(*testing.T) {
+func TestGetVolumeExportMap(t *testing.T) {
 	// TODO: Make this more robust
-	volumeExports, err := client.GetVolumeExports(defaultCtx)
-	if err != nil {
-		panic(err)
-	}
-
-	for _, volumeExport := range volumeExports {
-		fmt.Println(fmt.Sprintf("%+v", volumeExport))
+	volExMap, err := client.GetVolumeExportMap(defaultCtx, false)
+	assertNoError(t, err)
+	for v := range volExMap {
+		t.Logf("volName=%s, volPath=%s", v.Name, client.API.VolumePath(v.Name))
 	}
 }

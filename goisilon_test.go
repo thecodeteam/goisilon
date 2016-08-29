@@ -1,6 +1,7 @@
 package goisilon
 
 import (
+	"flag"
 	"os"
 	"testing"
 
@@ -20,10 +21,6 @@ func init() {
 	defaultCtx = context.Background()
 	defaultCtx = context.WithValue(
 		defaultCtx,
-		log.LevelKey(),
-		log.DebugLevel)
-	defaultCtx = context.WithValue(
-		defaultCtx,
 		log.AppenderKey(),
 		glogrus.NewWithOptions(
 			logrus.StandardLogger().Out,
@@ -32,6 +29,14 @@ func init() {
 }
 
 func TestMain(m *testing.M) {
+	flag.Parse()
+	if testing.Verbose() {
+		defaultCtx = context.WithValue(
+			defaultCtx,
+			log.LevelKey(),
+			log.DebugLevel)
+	}
+
 	client, err = NewClient(defaultCtx)
 	if err != nil {
 		log.WithError(err).Panic(defaultCtx, "error creating test client")
