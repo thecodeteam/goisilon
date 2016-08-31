@@ -65,6 +65,12 @@ type Persona struct {
 	Name *string      `json:"name,omitempty"`
 }
 
+type persona struct {
+	ID   *PersonaID   `json:"id,omitempty"`
+	Type *PersonaType `json:"type,omitempty"`
+	Name *string      `json:"name,omitempty"`
+}
+
 type personaWithID struct {
 	ID *PersonaID `json:"id,omitempty"`
 }
@@ -88,12 +94,12 @@ func (p *Persona) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	var pid personaWithID
-	if err := json.Unmarshal(data, &pid); err == nil {
-		if pid.ID != nil {
-			p.ID = pid.ID
-			return nil
-		}
+	var pp persona
+	if err := json.Unmarshal(data, &pp); err == nil {
+		p.ID = pp.ID
+		p.Name = pp.Name
+		p.Type = pp.Type
+		return nil
 	}
 
 	var s string
