@@ -6,10 +6,9 @@ import (
 )
 
 // Test both GetQuota() and SetQuota()
-func TestGetSetQuota(t *testing.T) {
-	t.SkipNow()
+func TestQuotaGetSet(t *testing.T) {
 
-	volumeName := "test_get_set_quota"
+	volumeName := "test_quota_get_set"
 	quotaSize := int64(12345)
 
 	// Setup the test
@@ -51,10 +50,9 @@ func TestGetSetQuota(t *testing.T) {
 }
 
 // Test UpdateQuota()
-func TestUpdateQuota(t *testing.T) {
-	t.SkipNow()
+func TestQuotaUpdate(t *testing.T) {
 
-	volumeName := "test_update_quota"
+	volumeName := "test_quota_update"
 	quotaSize := int64(12345)
 	updatedQuotaSize := int64(22345000)
 
@@ -104,10 +102,9 @@ func TestUpdateQuota(t *testing.T) {
 }
 
 // Test ClearQuota()
-func TestClearQuota(t *testing.T) {
-	t.SkipNow()
+func TestQuotaClear(t *testing.T) {
 
-	volumeName := "test_clear_quota"
+	volumeName := "test_quota_clear"
 	quotaSize := int64(12345)
 
 	// Setup the test

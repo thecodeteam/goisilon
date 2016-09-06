@@ -22,10 +22,11 @@ import (
 )
 
 const (
-	headerKeyAuthorization   = "Authorization"
-	headerKeyContentType     = "Content-Type"
-	headerValContentTypeJSON = "application/json"
-	defaultVolumesPath       = "/ifs/volumes"
+	headerKeyAuthorization                = "Authorization"
+	headerKeyContentType                  = "Content-Type"
+	headerValContentTypeJSON              = "application/json"
+	headerValContentTypeBinaryOctetStream = "binary/octet-stream"
+	defaultVolumesPath                    = "/ifs/volumes"
 )
 
 var (
@@ -40,42 +41,42 @@ type Client interface {
 	Do(
 		ctx context.Context,
 		method, path, id string,
-		params map[string]string,
+		params OrderedValues,
 		body, resp interface{}) error
 
 	// DoWithHeaders sends an HTTP request to the OneFS API.
 	DoWithHeaders(
 		ctx context.Context,
 		method, path, id string,
-		params, headers map[string]string,
+		params OrderedValues, headers map[string]string,
 		body, resp interface{}) error
 
 	// Get sends an HTTP request using the GET method to the OneFS API.
 	Get(
 		ctx context.Context,
 		path, id string,
-		params, headers map[string]string,
+		params OrderedValues, headers map[string]string,
 		resp interface{}) error
 
 	// Post sends an HTTP request using the POST method to the OneFS API.
 	Post(
 		ctx context.Context,
 		path, id string,
-		params, headers map[string]string,
+		params OrderedValues, headers map[string]string,
 		body, resp interface{}) error
 
 	// Put sends an HTTP request using the PUT method to the OneFS API.
 	Put(
 		ctx context.Context,
 		path, id string,
-		params, headers map[string]string,
+		params OrderedValues, headers map[string]string,
 		body, resp interface{}) error
 
 	// Delete sends an HTTP request using the DELETE method to the OneFS API.
 	Delete(
 		ctx context.Context,
 		path, id string,
-		params, headers map[string]string,
+		params OrderedValues, headers map[string]string,
 		resp interface{}) error
 
 	// APIVersion returns the API version.
@@ -233,7 +234,7 @@ func fmtAuthHeaderVal(user, pass string) string {
 func (c *client) Get(
 	ctx context.Context,
 	path, id string,
-	params, headers map[string]string,
+	params OrderedValues, headers map[string]string,
 	resp interface{}) error {
 
 	return c.DoWithHeaders(
@@ -243,7 +244,7 @@ func (c *client) Get(
 func (c *client) Post(
 	ctx context.Context,
 	path, id string,
-	params, headers map[string]string,
+	params OrderedValues, headers map[string]string,
 	body, resp interface{}) error {
 
 	return c.DoWithHeaders(
@@ -253,7 +254,7 @@ func (c *client) Post(
 func (c *client) Put(
 	ctx context.Context,
 	path, id string,
-	params, headers map[string]string,
+	params OrderedValues, headers map[string]string,
 	body, resp interface{}) error {
 
 	return c.DoWithHeaders(
@@ -263,7 +264,7 @@ func (c *client) Put(
 func (c *client) Delete(
 	ctx context.Context,
 	path, id string,
-	params, headers map[string]string,
+	params OrderedValues, headers map[string]string,
 	resp interface{}) error {
 
 	return c.DoWithHeaders(
@@ -273,7 +274,7 @@ func (c *client) Delete(
 func (c *client) Do(
 	ctx context.Context,
 	method, path, id string,
-	params map[string]string,
+	params OrderedValues,
 	body, resp interface{}) error {
 
 	return c.DoWithHeaders(ctx, method, path, id, params, nil, body, resp)
@@ -290,8 +291,44 @@ func endsWithSlash(s string) bool {
 func (c *client) DoWithHeaders(
 	ctx context.Context,
 	method, uri, id string,
-	params, headers map[string]string,
+	params OrderedValues, headers map[string]string,
 	body, resp interface{}) error {
+
+	res, isDebugLog, err := c.DoAndGetResponseBody(
+		ctx, method, uri, id, params, headers, body)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+
+	if isDebugLog {
+		logResponse(ctx, res)
+	}
+
+	// parse the response
+	switch {
+	case res == nil:
+		return nil
+	case res.StatusCode >= 200 && res.StatusCode <= 299:
+		if resp == nil {
+			return nil
+		}
+		dec := json.NewDecoder(res.Body)
+		if err = dec.Decode(resp); err != nil && err != io.EOF {
+			return err
+		}
+	default:
+		return parseJSONError(res)
+	}
+
+	return nil
+}
+
+func (c *client) DoAndGetResponseBody(
+	ctx context.Context,
+	method, uri, id string,
+	params OrderedValues, headers map[string]string,
+	body interface{}) (*http.Response, bool, error) {
 
 	var (
 		err                error
@@ -327,31 +364,64 @@ func (c *client) DoWithHeaders(
 	}
 
 	// add parameters to the URI
-	if ep := multimap(params).Encode(); ep != "" {
-		ubf.WriteString("?")
-		ubf.WriteString(ep)
+	if len(params) > 0 {
+		ubf.WriteByte('?')
+		if err := params.EncodeTo(ubf); err != nil {
+			return nil, false, err
+		}
 	}
+
+	u, err := url.Parse(ubf.String())
+	if err != nil {
+		return nil, false, err
+	}
+
+	var isContentTypeSet bool
 
 	// marshal the message body (assumes json format)
 	if body != nil {
-		buf := &bytes.Buffer{}
-		enc := json.NewEncoder(buf)
-		if err = enc.Encode(body); err != nil {
-			return err
+		if r, ok := body.(io.ReadCloser); ok {
+			req, err = http.NewRequest(method, u.String(), r)
+			defer r.Close()
+			if v, ok := headers[headerKeyContentType]; ok {
+				req.Header.Set(headerKeyContentType, v)
+			} else {
+				req.Header.Set(
+					headerKeyContentType, headerValContentTypeBinaryOctetStream)
+			}
+			isContentTypeSet = true
+		} else {
+			buf := &bytes.Buffer{}
+			enc := json.NewEncoder(buf)
+			if err = enc.Encode(body); err != nil {
+				return nil, false, err
+			}
+			req, err = http.NewRequest(method, u.String(), buf)
+			if v, ok := headers[headerKeyContentType]; ok {
+				req.Header.Set(headerKeyContentType, v)
+			} else {
+				req.Header.Set(headerKeyContentType, headerValContentTypeJSON)
+			}
+			isContentTypeSet = true
 		}
-		req, err = http.NewRequest(method, ubf.String(), buf)
-		req.Header.Set(headerKeyContentType, headerValContentTypeJSON)
 	} else {
-		req, err = http.NewRequest(method, ubf.String(), nil)
+		req, err = http.NewRequest(method, u.String(), nil)
 	}
 
 	if err != nil {
-		return err
+		return nil, false, err
+	}
+
+	if !isContentTypeSet {
+		isContentTypeSet = req.Header.Get(headerKeyContentType) != ""
 	}
 
 	// add headers to the request
 	if len(headers) > 0 {
 		for header, value := range headers {
+			if header == headerKeyContentType && isContentTypeSet {
+				continue
+			}
 			req.Header.Add(header, value)
 		}
 	}
@@ -379,28 +449,10 @@ func (c *client) DoWithHeaders(
 		if !isDebugLog {
 			log.Debug(ctx, logReqBuf.String())
 		}
-		return err
-	}
-	defer res.Body.Close()
-
-	if isDebugLog {
-		logResponse(ctx, res)
+		return nil, isDebugLog, err
 	}
 
-	// parse the response
-	switch {
-	case res == nil:
-		return nil
-	case res.StatusCode >= 200 && res.StatusCode <= 299:
-		dec := json.NewDecoder(res.Body)
-		if err = dec.Decode(resp); err != nil && err != io.EOF {
-			return err
-		}
-	default:
-		return parseJSONError(res)
-	}
-
-	return nil
+	return res, isDebugLog, err
 }
 
 func (c *client) APIVersion() uint8 {
@@ -421,14 +473,6 @@ func (c *client) VolumesPath() string {
 
 func (c *client) VolumePath(volumeName string) string {
 	return path.Join(c.volp, volumeName)
-}
-
-func multimap(p map[string]string) url.Values {
-	q := make(url.Values, len(p))
-	for k, v := range p {
-		q[k] = []string{v}
-	}
-	return q
 }
 
 func (err *JSONError) Error() string {

@@ -1,7 +1,7 @@
 package v1
 
 import (
-	"fmt"
+	"path"
 
 	"golang.org/x/net/context"
 
@@ -9,12 +9,15 @@ import (
 )
 
 var (
+	aclQS           = api.OrderedValues{{[]byte("acl")}}
+	metadataQS      = api.OrderedValues{{[]byte("metadata")}}
+	recursiveTrueQS = api.OrderedValues{
+		{[]byte("recursive"), []byte("true")},
+	}
 	createVolumeHeaders = map[string]string{
 		"x-isi-ifs-target-type":    "container",
 		"x-isi-ifs-access-control": "public_read_write",
 	}
-
-	setVolumeACLHeaders = map[string]string{"acl": ""}
 )
 
 // GetIsiVolumes queries a list of all volumes on the cluster
@@ -74,7 +77,7 @@ func CreateIsiVolume(
 		ctx,
 		realNamespacePath(client),
 		name,
-		setVolumeACLHeaders,
+		aclQS,
 		nil,
 		data,
 		&resp)
@@ -89,7 +92,13 @@ func GetIsiVolume(
 	name string) (resp *getIsiVolumeAttributesResp, err error) {
 
 	// PAPI call: GET https://1.2.3.4:8080/namespace/path/to/volume/?metadata
-	err = client.Get(ctx, realNamespacePath(client), name, map[string]string{"metadata": ""}, nil, &resp)
+	err = client.Get(
+		ctx,
+		realNamespacePath(client),
+		name,
+		metadataQS,
+		nil,
+		&resp)
 	return resp, err
 }
 
@@ -99,9 +108,13 @@ func DeleteIsiVolume(
 	client api.Client,
 	name string) (resp *getIsiVolumesResp, err error) {
 
-	// PAPI call: DELETE https://1.2.3.4:8080/namespace/path/to/volumes/volume_name?recursive=true
-
-	err = client.Delete(ctx, realNamespacePath(client), name, map[string]string{"recursive": "true"}, nil, &resp)
+	err = client.Delete(
+		ctx,
+		realNamespacePath(client),
+		name,
+		recursiveTrueQS,
+		nil,
+		&resp)
 	return resp, err
 }
 
@@ -113,9 +126,19 @@ func CopyIsiVolume(
 	// PAPI calls: PUT https://1.2.3.4:8080/namespace/path/to/volumes/destination_volume_name
 	//             x-isi-ifs-copy-source: /path/to/volumes/source_volume_name
 
-	headers := map[string]string{"x-isi-ifs-copy-source": fmt.Sprintf("/%s/%s", realNamespacePath(client), sourceName)}
-
 	// copy the volume
-	err = client.Put(ctx, realNamespacePath(client), destinationName, nil, headers, nil, &resp)
+	err = client.Put(
+		ctx,
+		realNamespacePath(client),
+		destinationName,
+		nil,
+		map[string]string{
+			"x-isi-ifs-copy-source": path.Join(
+				"/",
+				realNamespacePath(client),
+				sourceName),
+		},
+		nil,
+		&resp)
 	return resp, err
 }

@@ -8,25 +8,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-func assertNoError(t *testing.T, err error) {
-	if !assert.NoError(t, err) {
-		t.Error(err)
-		t.FailNow()
-	}
-}
-
-func assertNil(t *testing.T, i interface{}) {
-	if !assert.Nil(t, i) {
-		t.FailNow()
-	}
-}
-
-func assertNotNil(t *testing.T, i interface{}) {
-	if !assert.NotNil(t, i) {
-		t.FailNow()
-	}
-}
-
 func TestExportsList(t *testing.T) {
 	volumeName1 := "test_get_exports1"
 	volumeName2 := "test_get_exports2"
