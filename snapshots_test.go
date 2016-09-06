@@ -5,12 +5,11 @@ import (
 	"testing"
 )
 
-func TestGetSnapshots(t *testing.T) {
-	t.SkipNow()
+func TestSnapshotsGet(t *testing.T) {
 
-	snapshotPath := "test_get_snapshots_volume"
-	snapshotName1 := "test_get_snapshots_name1"
-	snapshotName2 := "test_get_snapshots_name2"
+	snapshotPath := "test_snapshots_get_volume"
+	snapshotName1 := "test_snapshots_get_snapshot_0"
+	snapshotName2 := "test_snapshots_get_snapshot_1"
 
 	// create the test volume
 	_, err := client.CreateVolume(defaultCtx, snapshotPath)
@@ -78,14 +77,13 @@ func TestGetSnapshots(t *testing.T) {
 
 }
 
-func TestGetSnapshotsByPath(t *testing.T) {
-	t.SkipNow()
+func TestSnapshotsGetByPath(t *testing.T) {
 
-	snapshotPath1 := "test_get_snap_by_path_volume1"
-	snapshotPath2 := "test_get_snap_by_path_volume2"
-	snapshotName1 := "test_get_snapshots_by_path_name1"
-	snapshotName2 := "test_get_snapshots_by_path_name2"
-	snapshotName3 := "test_get_snapshots_by_path_name3"
+	snapshotPath1 := "test_snapshots_get_by_path_volume_1"
+	snapshotPath2 := "test_snapshots_get_by_path_volume_2"
+	snapshotName1 := "test_snapshots_get_by_path_snapshot_1"
+	snapshotName2 := "test_snapshots_get_by_path_snapshot_2"
+	snapshotName3 := "test_snapshots_get_by_path_snapshot_3"
 
 	// create the two test volumes
 	_, err := client.CreateVolume(defaultCtx, snapshotPath1)
@@ -164,11 +162,10 @@ func TestGetSnapshotsByPath(t *testing.T) {
 	}
 }
 
-func TestCreateSnapshot(t *testing.T) {
-	t.SkipNow()
+func TestSnapshotCreate(t *testing.T) {
 
-	snapshotPath := "test_create_snapshot_volume"
-	snapshotName := "test_create_snapshot_name"
+	snapshotPath := "test_snapshot_create_volume"
+	snapshotName := "test_snapshot_create_snapshot"
 
 	// create the test volume
 	_, err := client.CreateVolume(defaultCtx, snapshotPath)
@@ -209,11 +206,10 @@ func TestCreateSnapshot(t *testing.T) {
 	}
 }
 
-func TestRemoveSnapshot(t *testing.T) {
-	t.SkipNow()
+func TestSnapshotRemove(t *testing.T) {
 
-	snapshotPath := "test_remove_snapshot_volume"
-	snapshotName := "test_remove_snapshot_name"
+	snapshotPath := "test_snapshot_remove_volume"
+	snapshotName := "test_snapshot_remove_snapshot"
 
 	// create the test volume
 	_, err := client.CreateVolume(defaultCtx, snapshotPath)
@@ -248,13 +244,12 @@ func TestRemoveSnapshot(t *testing.T) {
 	}
 }
 
-func TestCopySnapshot(t *testing.T) {
-	t.SkipNow()
+func TestSnapshotCopy(t *testing.T) {
 
-	sourceSnapshotPath := "test_copy_snapshot_volume"
-	sourceSnapshotName := "test_copy_snapshot_name"
-	destinationVolume := "test_copy_snapshot_destination"
-	subdirectoryName := "test_sub_directory"
+	sourceSnapshotPath := "test_snapshot_copy_src_volume"
+	sourceSnapshotName := "test_snapshot_copy_src_snapshot"
+	destinationVolume := "test_snapshot_copy_dst_volume"
+	subdirectoryName := "test_snapshot_copy_sub_dir"
 	sourceSubDirectory := fmt.Sprintf("%s/%s", sourceSnapshotPath, subdirectoryName)
 	destinationSubDirectory := fmt.Sprintf("%s/%s", destinationVolume, subdirectoryName)
 

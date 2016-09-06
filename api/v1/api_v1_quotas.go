@@ -96,6 +96,8 @@ func UpdateIsiQuotaHardThreshold(
 	return err
 }
 
+var byteArrPath = []byte("path")
+
 // DeleteIsiQuota removes the quota for a directory
 func DeleteIsiQuota(
 	ctx context.Context,
@@ -105,8 +107,11 @@ func DeleteIsiQuota(
 	// PAPI call: DELETE https://1.2.3.4:8080/platform/1/quota/quotas?path=/path/to/volume
 	// This will remove a the quota on a volume
 
-	var quotaResp isiQuotaListResp
-	err = client.Delete(ctx, quotaPath, "", map[string]string{"path": path}, nil, &quotaResp)
-
-	return err
+	return client.Delete(
+		ctx,
+		quotaPath,
+		"",
+		api.OrderedValues{{byteArrPath, []byte(path)}},
+		nil,
+		nil)
 }

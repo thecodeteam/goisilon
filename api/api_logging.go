@@ -12,12 +12,16 @@ import (
 	"golang.org/x/net/context"
 )
 
+func isBinOctetBody(h http.Header) bool {
+	return h.Get(headerKeyContentType) == headerValContentTypeBinaryOctetStream
+}
+
 func logRequest(ctx context.Context, w io.Writer, req *http.Request) {
 	fmt.Fprintln(w, "")
 	fmt.Fprint(w, "    -------------------------- ")
 	fmt.Fprint(w, "GOISILON HTTP REQUEST")
 	fmt.Fprintln(w, " -------------------------")
-	buf, err := httputil.DumpRequest(req, true)
+	buf, err := httputil.DumpRequest(req, !isBinOctetBody(req.Header))
 	if err != nil {
 		return
 	}
@@ -33,9 +37,7 @@ func logResponse(ctx context.Context, res *http.Response) {
 	fmt.Fprint(w, "GOISILON HTTP RESPONSE")
 	fmt.Fprintln(w, " -------------------------")
 
-	buf, err := httputil.DumpResponse(
-		res,
-		res.Header.Get("Content-Type") != "application/octet-stream")
+	buf, err := httputil.DumpResponse(res, !isBinOctetBody(res.Header))
 	if err != nil {
 		return
 	}

@@ -183,6 +183,15 @@ func (p *FileMode) UnmarshalText(data []byte) error {
 	return nil
 }
 
+// ParseFileMode parses a string and returns a FileMode.
+func ParseFileMode(s string) (FileMode, error) {
+	var fm FileMode
+	if err := fm.UnmarshalText([]byte(s)); err != nil {
+		return 0, err
+	}
+	return fm, nil
+}
+
 // ACL is an Isilon Access Control List used for managing an object's security.
 type ACL struct {
 	Authoritative *AuthoritativeType `json:"authoritative,omitempty"`
@@ -192,7 +201,7 @@ type ACL struct {
 	Mode          *FileMode          `json:"mode,omitempty"`
 }
 
-var aclQueryString = map[string]string{"acl": ""}
+var aclQueryString = api.OrderedValues{{[]byte("acl")}}
 
 // ACLInspect GETs an ACL.
 func ACLInspect(

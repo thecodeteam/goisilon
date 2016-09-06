@@ -76,6 +76,7 @@ func CopyIsiSnapshot(
 
 	headers := map[string]string{
 		"x-isi-ifs-copy-source": path.Join(
+			"/",
 			realVolumeSnapshotPath(client, sourceSnapshotName),
 			sourceVolume),
 	}
