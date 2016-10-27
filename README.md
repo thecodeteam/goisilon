@@ -89,7 +89,7 @@ if err := c.DeleteVolume(context.Background(), "loremipsum"); err != nil {
 ### More Examples
 Several, very detailed examples of the GoIsilon package in use can be found in
 the package's `*_test.go` files as well as in the libStorage Isilon
-[storage driver](https://github.com/emccode/libstorage/blob/master/drivers/storage/isilon/storage/isilon_storage.go).
+[storage driver](https://github.com/codedellemc/libstorage/blob/master/drivers/storage/isilon/storage/isilon_storage.go).
 
 ## Contributions
 Please contribute!
@@ -108,7 +108,7 @@ specific language governing permissions and limitations under the License.
 Support
 -------
 If you have questions relating to the project, please either post
-[Github Issues](https://github.com/emccode/mesos-module-dvdi/issues), join our
+[Github Issues](https://github.com/codedellemc/mesos-module-dvdi/issues), join our
 Slack channel available by signup through
 [community.emc.com](https://community.emccode.com) and post questions into
 `#projects`, or reach out to the maintainers directly.  The code and

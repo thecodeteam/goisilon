@@ -5,7 +5,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/emccode/goisilon/api"
+	"github.com/codedellemc/goisilon/api"
 )
 
 var (

@@ -3,7 +3,7 @@ package goisilon
 import (
 	"golang.org/x/net/context"
 
-	api "github.com/emccode/goisilon/api/v2"
+	api "github.com/codedellemc/goisilon/api/v2"
 )
 
 type ExportList []*api.Export

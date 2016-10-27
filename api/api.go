@@ -14,11 +14,11 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/emccode/gournal"
+	log "github.com/codedellemc/gournal"
 	"golang.org/x/net/context"
 	"golang.org/x/net/context/ctxhttp"
 
-	"github.com/emccode/goisilon/api/json"
+	"github.com/codedellemc/goisilon/api/json"
 )
 
 const (

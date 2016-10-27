@@ -6,11 +6,11 @@ import (
 	"strings"
 	"sync"
 
-	log "github.com/emccode/gournal"
+	log "github.com/codedellemc/gournal"
 	"golang.org/x/net/context"
 
-	apiv1 "github.com/emccode/goisilon/api/v1"
-	apiv2 "github.com/emccode/goisilon/api/v2"
+	apiv1 "github.com/codedellemc/goisilon/api/v1"
+	apiv2 "github.com/codedellemc/goisilon/api/v2"
 )
 
 type Volume *apiv1.IsiVolume

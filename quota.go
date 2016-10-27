@@ -3,7 +3,7 @@ package goisilon
 import (
 	"golang.org/x/net/context"
 
-	api "github.com/emccode/goisilon/api/v1"
+	api "github.com/codedellemc/goisilon/api/v1"
 )
 
 type Quota *api.IsiQuota

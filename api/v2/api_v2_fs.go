@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/emccode/goisilon/api"
+	"github.com/codedellemc/goisilon/api"
 	"golang.org/x/net/context"
 )
 
