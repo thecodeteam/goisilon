@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	log "github.com/emccode/gournal"
+	log "github.com/codedellemc/gournal"
 	"golang.org/x/net/context"
 )
 

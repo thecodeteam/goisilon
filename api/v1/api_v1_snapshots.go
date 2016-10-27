@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/emccode/goisilon/api"
+	"github.com/codedellemc/goisilon/api"
 )
 
 // GetIsiSnapshots queries a list of all snapshots on the cluster

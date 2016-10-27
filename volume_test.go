@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 
-	apiv2 "github.com/emccode/goisilon/api/v2"
+	apiv2 "github.com/codedellemc/goisilon/api/v2"
 )
 
 func TestVolumeList(*testing.T) {

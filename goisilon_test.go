@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/Sirupsen/logrus"
-	log "github.com/emccode/gournal"
-	glogrus "github.com/emccode/gournal/logrus"
+	log "github.com/codedellemc/gournal"
+	glogrus "github.com/codedellemc/gournal/logrus"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )

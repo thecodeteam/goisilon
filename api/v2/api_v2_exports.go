@@ -6,8 +6,8 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/emccode/goisilon/api"
-	"github.com/emccode/goisilon/api/json"
+	"github.com/codedellemc/goisilon/api"
+	"github.com/codedellemc/goisilon/api/json"
 )
 
 // Export is an Isilon Export.
