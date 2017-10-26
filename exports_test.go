@@ -1,11 +1,11 @@
 package goisilon
 
 import (
+	"context"
 	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 func TestExportsList(t *testing.T) {

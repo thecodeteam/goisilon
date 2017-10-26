@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codedellemc/goisilon/api"
-	"golang.org/x/net/context"
+	"github.com/thecodeteam/goisilon/api"
+	"context"
 )
 
 // AuthoritativeType is a possible value used with an ACL's Authoritative field.

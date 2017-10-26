@@ -4,10 +4,10 @@ import (
 	"errors"
 	"strconv"
 
-	"golang.org/x/net/context"
+	"context"
 
-	"github.com/codedellemc/goisilon/api"
-	"github.com/codedellemc/goisilon/api/json"
+	"github.com/thecodeteam/goisilon/api"
+	"github.com/thecodeteam/goisilon/api/json"
 )
 
 // Export is an Isilon Export.

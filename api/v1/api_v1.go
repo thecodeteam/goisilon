@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/codedellemc/goisilon/api"
+	"github.com/thecodeteam/goisilon/api"
 )
 
 const (

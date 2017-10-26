@@ -1,15 +1,15 @@
 package goisilon
 
 import (
+	"context"
 	"flag"
 	"os"
 	"testing"
 
-	log "github.com/codedellemc/gournal"
-	glogrus "github.com/codedellemc/gournal/logrus"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
+	log "github.com/thecodeteam/gournal"
+	glogrus "github.com/thecodeteam/gournal/logrus"
 )
 
 var (

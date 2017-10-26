@@ -1,11 +1,10 @@
 package v1
 
 import (
+	"context"
 	"path"
 
-	"golang.org/x/net/context"
-
-	"github.com/codedellemc/goisilon/api"
+	"github.com/thecodeteam/goisilon/api"
 )
 
 var (

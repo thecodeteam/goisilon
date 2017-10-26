@@ -3,13 +3,13 @@ package api
 import (
 	"bufio"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"net/http/httputil"
 
-	log "github.com/codedellemc/gournal"
-	"golang.org/x/net/context"
+	log "github.com/thecodeteam/gournal"
 )
 
 func isBinOctetBody(h http.Header) bool {

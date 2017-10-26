@@ -4,9 +4,8 @@
 GoIsilon is a Go package that provides a client for the EMC Isilon OneFS HTTP
 API. The package provides both direct implementations of the API bindings as
 well as abstract, helper functionality. In addition, services such as Docker,
-Mesos, [libStorage](http://libstorage.readthedocs.io/) and
-[REX-Ray](http://rexray.readthedocs.io/) use the GoIsilon package to integrate
-with the NAS storage platform.
+Mesos, and [REX-Ray](http://rexray.readthedocs.io/) use the GoIsilon package
+to integrate with the NAS storage platform.
 
 ## OneFS API Support Matrix
 The GoIsilon package is tested with and supports OneFS 7.2+ with support for
@@ -89,7 +88,7 @@ if err := c.DeleteVolume(context.Background(), "loremipsum"); err != nil {
 ### More Examples
 Several, very detailed examples of the GoIsilon package in use can be found in
 the package's `*_test.go` files as well as in the libStorage Isilon
-[storage driver](https://github.com/codedellemc/libstorage/blob/master/drivers/storage/isilon/storage/isilon_storage.go).
+[storage driver](https://github.com/thecodeteam/rexray/blob/master/libstorage/drivers/storage/isilon/storage/isilon_storage.go).
 
 ## Contributions
 Please contribute!

@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/codedellemc/goisilon/api/json"
+	"github.com/thecodeteam/goisilon/api/json"
 )
 
 func TestExportEncodeJSON(t *testing.T) {

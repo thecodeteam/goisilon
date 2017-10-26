@@ -2,6 +2,7 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
@@ -14,11 +15,9 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/codedellemc/gournal"
-	"golang.org/x/net/context"
-	"golang.org/x/net/context/ctxhttp"
+	log "github.com/thecodeteam/gournal"
 
-	"github.com/codedellemc/goisilon/api/json"
+	"github.com/thecodeteam/goisilon/api/json"
 )
 
 const (
@@ -31,7 +30,7 @@ const (
 
 var (
 	debug, _     = strconv.ParseBool(os.Getenv("GOISILON_DEBUG"))
-	newClientErr = errors.New("missing endpoint, username, or password")
+	errNewClient = errors.New("missing endpoint, username, or password")
 )
 
 // Client is an API client.
@@ -142,7 +141,7 @@ func New(
 	opts *ClientOptions) (Client, error) {
 
 	if host == "" || user == "" || pass == "" {
-		return nil, newClientErr
+		return nil, errNewClient
 	}
 
 	c := &client{
@@ -445,7 +444,8 @@ func (c *client) DoAndGetResponseBody(
 	}
 
 	// send the request
-	if res, err = ctxhttp.Do(ctx, c.http, req); err != nil {
+	req = req.WithContext(ctx)
+	if res, err = c.http.Do(req); err != nil {
 		if !isDebugLog {
 			log.Debug(ctx, logReqBuf.String())
 		}

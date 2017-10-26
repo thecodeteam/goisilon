@@ -1,13 +1,12 @@
 package goisilon
 
 import (
+	"context"
 	"os"
 	"strconv"
 	"time"
 
-	"golang.org/x/net/context"
-
-	"github.com/codedellemc/goisilon/api"
+	"github.com/thecodeteam/goisilon/api"
 )
 
 // Client is an Isilon client.

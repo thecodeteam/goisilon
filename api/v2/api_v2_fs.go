@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/codedellemc/goisilon/api"
-	"golang.org/x/net/context"
+	"github.com/thecodeteam/goisilon/api"
+	"context"
 )
 
 // ContainerChild is a child object of a container.

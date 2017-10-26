@@ -1,11 +1,11 @@
 package v1
 
 import (
+	"context"
 	"errors"
 	"fmt"
 
-	"github.com/codedellemc/goisilon/api"
-	"golang.org/x/net/context"
+	"github.com/thecodeteam/goisilon/api"
 )
 
 // GetIsiQuota queries the quota for a directory

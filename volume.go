@@ -1,16 +1,16 @@
 package goisilon
 
 import (
+	"context"
 	"os"
 	"path"
 	"strings"
 	"sync"
 
-	log "github.com/codedellemc/gournal"
-	"golang.org/x/net/context"
+	log "github.com/thecodeteam/gournal"
 
-	apiv1 "github.com/codedellemc/goisilon/api/v1"
-	apiv2 "github.com/codedellemc/goisilon/api/v2"
+	apiv1 "github.com/thecodeteam/goisilon/api/v1"
+	apiv2 "github.com/thecodeteam/goisilon/api/v2"
 )
 
 type Volume *apiv1.IsiVolume

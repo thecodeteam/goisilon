@@ -1,9 +1,9 @@
 package goisilon
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
-	api "github.com/codedellemc/goisilon/api/v1"
+	api "github.com/thecodeteam/goisilon/api/v1"
 )
 
 type Quota *api.IsiQuota

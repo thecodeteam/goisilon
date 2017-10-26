@@ -1,9 +1,9 @@
 package goisilon
 
 import (
-	"golang.org/x/net/context"
+	"context"
 
-	api "github.com/codedellemc/goisilon/api/v2"
+	api "github.com/thecodeteam/goisilon/api/v2"
 )
 
 type ACL *api.ACL
