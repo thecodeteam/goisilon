@@ -6,10 +6,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	log "github.com/akutz/gournal"
 	glogrus "github.com/akutz/gournal/logrus"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 var (

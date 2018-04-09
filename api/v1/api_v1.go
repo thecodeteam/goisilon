@@ -4,7 +4,6 @@ import (
 	"os"
 	"path"
 	"strconv"
-	"strings"
 
 	"github.com/thecodeteam/goisilon/api"
 )
@@ -14,7 +13,7 @@ const (
 	exportsPath         = "platform/1/protocols/nfs/exports"
 	quotaPath           = "platform/1/quota/quotas"
 	snapshotsPath       = "platform/1/snapshot/snapshots"
-	volumesnapshotsPath = "/ifs/.snapshot"
+	volumesnapshotsPath = ".snapshot"
 )
 
 var (
@@ -22,14 +21,13 @@ var (
 )
 
 func realNamespacePath(client api.Client) string {
-	return path.Join(namespacePath, client.VolumesPath())
+	return path.Join(namespacePath, client.VolumesAccessPath())
 }
 
 func realexportsPath(client api.Client) string {
-	return path.Join(exportsPath, client.VolumesPath())
+	return path.Join(exportsPath, client.VolumesAccessPath())
 }
 
 func realVolumeSnapshotPath(client api.Client, name string) string {
-	parts := strings.SplitN(realNamespacePath(client), "/ifs/", 2)
-	return path.Join(parts[0], volumesnapshotsPath, name, parts[1])
+	return path.Join(realNamespacePath(client), volumesnapshotsPath, name)
 }

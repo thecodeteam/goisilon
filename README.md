@@ -32,12 +32,13 @@ variables to configure the GoIsilon client:
 #### Environment Variables
 Name | Description
 ---- | -----------
-`GOISILON_ENDPOINT` | the API endpoint, ex. `https://172.17.177.230:8080`
-`GOISILON_USERNAME` | the username
-`GOISILON_GROUP` | the user's group
-`GOISILON_PASSWORD` | the password
-`GOISILON_INSECURE` | whether to skip SSL validation
-`GOISILON_VOLUMEPATH` | which base path to use when looking for volume directories
+`GOISILON_ENDPOINT`   | the API endpoint, ex. `https://172.17.177.230:8080`
+`GOISILON_USERNAME`   | the username
+`GOISILON_GROUP`      | the user's group
+`GOISILON_PASSWORD`   | the password
+`GOISILON_INSECURE`   | whether to skip SSL validation
+`GOISILON_VOLUMEPATH` | which filesystem base path to use when looking for volume directories
+`GOISILON_ACCESSPATH` | (optional) URL base path to volume directories including access point. Defaults to `GOISILON_VOLUMEPATH` if not specified.
 
 ### Initialize a new client with options
 The following example demonstrates how to explicitly specify options when
@@ -51,7 +52,25 @@ client, err := NewClientWithArgs(
 	"userName",
 	"password",
 	true,
+	"",
 	"/ifs/volumes")
+if err != nil {
+	panic(err)
+}
+```
+
+Another example with Access Point, for users with limited permissions:
+
+```go
+client, err := NewClientWithArgs(
+	context.Background(),
+	"https://172.17.177.230:8080",
+	"groupName",
+	"userName",
+	"password",
+	true,
+	"/user1_access_point",
+	"/ifs/data/user1_volumes")
 if err != nil {
 	panic(err)
 }

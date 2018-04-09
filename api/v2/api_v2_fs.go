@@ -8,8 +8,8 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/thecodeteam/goisilon/api"
 	"context"
+	"github.com/thecodeteam/goisilon/api"
 )
 
 // ContainerChild is a child object of a container.
