@@ -87,8 +87,14 @@ type Client interface {
 	// Group returns the group name used to access the OneFS API.
 	Group() string
 
+	// VolumesAccessPath returns the client's configured volumes URL path.
+	VolumesAccessPath() string
+
 	// VolumesPath returns the client's configured volumes path.
 	VolumesPath() string
+
+	// VolumeAccessPath returns the URL path to a volume with the provided name
+	VolumeAccessPath(name string) string
 
 	// VolumePath returns the path to a volume with the provided name.
 	VolumePath(name string) string
@@ -100,6 +106,7 @@ type client struct {
 	auth string
 	user string
 	grup string
+	vola string
 	volp string
 	apiv uint8
 }
@@ -126,6 +133,10 @@ type ClientOptions struct {
 	// Insecure is a flag that indicates whether or not to supress SSL errors.
 	Insecure bool
 
+	// VolumesAccessPath is the URL location on the Isilon server where volumes
+	// are stored.
+	VolumesAccessPath string
+
 	// VolumesPath is the location on the Isilon server where volumes are
 	// stored.
 	VolumesPath string
@@ -149,6 +160,7 @@ func New(
 		user: user,
 		grup: group,
 		auth: fmtAuthHeaderVal(user, pass),
+		vola: defaultVolumesPath,
 		volp: defaultVolumesPath,
 	}
 
@@ -157,6 +169,13 @@ func New(
 	if opts != nil {
 		if opts.VolumesPath != "" {
 			c.volp = opts.VolumesPath
+		}
+		// If VolumesAccessPath is not set, fall back to VolumesPath for
+		// backward compatibility (make sure VolumesAccessPath is optional).
+		if opts.VolumesAccessPath != "" {
+			c.vola = opts.VolumesAccessPath
+		} else {
+			c.vola = c.volp
 		}
 
 		if opts.Timeout != 0 {
@@ -465,6 +484,14 @@ func (c *client) User() string {
 
 func (c *client) Group() string {
 	return c.grup
+}
+
+func (c *client) VolumesAccessPath() string {
+	return c.vola
+}
+
+func (c *client) VolumeAccessPath(volumeName string) string {
+	return path.Join(c.vola, volumeName)
 }
 
 func (c *client) VolumesPath() string {

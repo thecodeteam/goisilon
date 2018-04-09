@@ -87,7 +87,7 @@ func (c *Client) ForceDeleteVolume(ctx context.Context, name string) error {
 
 	var (
 		user       = c.API.User()
-		vpl        = len(c.API.VolumesPath()) + 1
+		vpl        = len(c.API.VolumesAccessPath()) + 1
 		errs       = make(chan error)
 		queryDone  = make(chan int)
 		childPaths = make(chan string)
