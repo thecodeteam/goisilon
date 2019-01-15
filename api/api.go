@@ -297,6 +297,8 @@ func (c *client) DoWithHeaders(
 	res, isDebugLog, err := c.DoAndGetResponseBody(
 		ctx, method, uri, id, params, headers, body)
 	if err != nil {
+		fmt.Printf("Response Body Actual: %v", res.Body)
+		fmt.Printf("Errored out here.")
 		return err
 	}
 	defer res.Body.Close()
