@@ -101,7 +101,7 @@ type client struct {
 	user string
 	grup string
 	volp string
-	apiv uint8
+	apiv float32
 }
 
 type apiVerResponse struct {
@@ -126,7 +126,7 @@ type ClientOptions struct {
 	// Insecure is a flag that indicates whether or not to supress SSL errors.
 	Insecure bool
 
-	// VolumesPath is the location on the Isilon server where volumes are
+	// VolumesPath is the location on the Iilon server where volumes are
 	// stored.
 	VolumesPath string
 
@@ -179,11 +179,11 @@ func New(
 	}
 
 	if resp.Latest != nil {
-		i, err := strconv.ParseFloat(*resp.Latest, 64)
+		i, err := strconv.ParseFloat(*resp.Latest, 32)
 		if err != nil {
 			return nil, err
 		}
-		c.apiv = uint8(i)
+		c.apiv = float32(i)
 	} else {
 		c.apiv = 2
 	}
