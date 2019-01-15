@@ -3,7 +3,7 @@ package goisilon
 import (
 	"context"
 
-	api "github.com/thecodeteam/goisilon/api/v2"
+	api "github.com/hpanike/goisilon/api/v2"
 )
 
 type ExportList []*api.Export

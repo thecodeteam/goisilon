@@ -6,8 +6,8 @@ import (
 
 	"context"
 
-	"github.com/thecodeteam/goisilon/api"
-	"github.com/thecodeteam/goisilon/api/json"
+	"github.com/hpanike/goisilon/api"
+	"github.com/hpanike/goisilon/api/json"
 )
 
 // Export is an Isilon Export.

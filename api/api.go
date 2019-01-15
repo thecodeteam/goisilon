@@ -17,7 +17,7 @@ import (
 
 	log "github.com/akutz/gournal"
 
-	"github.com/thecodeteam/goisilon/api/json"
+	"github.com/hpanike/goisilon/api/json"
 )
 
 const (

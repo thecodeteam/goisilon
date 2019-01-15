@@ -4,7 +4,7 @@ import (
 	"context"
 	"path"
 
-	"github.com/thecodeteam/goisilon/api"
+	"github.com/hpanike/goisilon/api"
 )
 
 var (
