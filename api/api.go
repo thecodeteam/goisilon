@@ -79,7 +79,7 @@ type Client interface {
 		resp interface{}) error
 
 	// APIVersion returns the API version.
-	APIVersion() uint8
+	APIVersion() float32
 
 	// User returns the user name used to access the OneFS API.
 	User() string
@@ -455,7 +455,7 @@ func (c *client) DoAndGetResponseBody(
 	return res, isDebugLog, err
 }
 
-func (c *client) APIVersion() uint8 {
+func (c *client) APIVersion() float32 {
 	return c.apiv
 }
 
