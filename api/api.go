@@ -126,7 +126,7 @@ type ClientOptions struct {
 	// Insecure is a flag that indicates whether or not to supress SSL errors.
 	Insecure bool
 
-	// VolumesPath is the location on the Iilon server where volumes are
+	// VolumesPath is the location on the Isilon server where volumes are
 	// stored.
 	VolumesPath string
 
