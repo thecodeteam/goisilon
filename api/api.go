@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -314,6 +315,7 @@ func (c *client) DoWithHeaders(
 		}
 		dec := json.NewDecoder(res.Body)
 		if err = dec.Decode(resp); err != nil && err != io.EOF {
+			fmt.Printf("Response Body Actual: %v", res.Body)
 			return err
 		}
 	default:
