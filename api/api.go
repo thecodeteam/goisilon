@@ -179,7 +179,7 @@ func New(
 	}
 
 	if resp.Latest != nil {
-		i, err := strconv.ParseUint(*resp.Latest, 10, 8)
+		i, err := strconv.ParseFloat(*resp.Latest, 64)
 		if err != nil {
 			return nil, err
 		}
