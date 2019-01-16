@@ -16,6 +16,8 @@ import (
 	"strings"
 	"time"
 
+	"golang.org/x/net/html"
+
 	log "github.com/akutz/gournal"
 
 	"github.com/hpanike/goisilon/api/json"
@@ -120,6 +122,11 @@ type Error struct {
 type JSONError struct {
 	StatusCode int
 	Err        []Error `json:"errors"`
+}
+
+type HTMLError struct {
+	StatusCode int
+	Err        string
 }
 
 // ClientOptions are options for the API client.
@@ -297,8 +304,6 @@ func (c *client) DoWithHeaders(
 	res, isDebugLog, err := c.DoAndGetResponseBody(
 		ctx, method, uri, id, params, headers, body)
 	if err != nil {
-		fmt.Printf("Response Body Actual: %v", res.Body)
-		fmt.Printf("Errored out here.")
 		return err
 	}
 	defer res.Body.Close()
@@ -317,11 +322,15 @@ func (c *client) DoWithHeaders(
 		}
 		dec := json.NewDecoder(res.Body)
 		if err = dec.Decode(resp); err != nil && err != io.EOF {
-			fmt.Printf("Response Body Actual: %v", res.Body)
 			return err
 		}
 	default:
-		return parseJSONError(res)
+		switch {
+		case res.Header.Get("Content-Type") == "text/html":
+			return parseHTMLError(res)
+		default:
+			return parseJSONError(res)
+		}
 	}
 
 	return nil
@@ -495,4 +504,54 @@ func parseJSONError(r *http.Response) error {
 	}
 
 	return jsonError
+}
+
+func parseHTMLError(r *http.Response) error {
+
+	doc, err := html.Parse(r.Body)
+	if err != nil {
+		return err
+	}
+
+	r1 := getElementById(doc, "message")
+
+	return fmt.Errorf("Message: %v Headers: %v", r1.FirstChild.FirstChild.Data)
+}
+
+func GetAttribute(n *html.Node, key string) (string, bool) {
+	for _, attr := range n.Attr {
+		if attr.Key == key {
+			return attr.Val, true
+		}
+	}
+	return "", false
+}
+
+func checkId(n *html.Node, id string) bool {
+	if n.Type == html.ElementNode {
+		s, ok := GetAttribute(n, "id")
+		if ok && s == id {
+			return true
+		}
+	}
+	return false
+}
+
+func traverse(n *html.Node, id string) *html.Node {
+	if checkId(n, id) {
+		return n
+	}
+
+	for c := n.FirstChild; c != nil; c = c.NextSibling {
+		result := traverse(c, id)
+		if result != nil {
+			return result
+		}
+	}
+
+	return nil
+}
+
+func getElementById(n *html.Node, id string) *html.Node {
+	return traverse(n, id)
 }
