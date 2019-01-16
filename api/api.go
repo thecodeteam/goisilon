@@ -515,7 +515,7 @@ func parseHTMLError(r *http.Response) error {
 
 	r1 := getElementById(doc, "message")
 
-	return fmt.Errorf("Message: %v Headers: %v", r1.FirstChild.FirstChild.Data)
+	return fmt.Errorf("%v", r1.FirstChild.FirstChild.Data)
 }
 
 func GetAttribute(n *html.Node, key string) (string, bool) {
