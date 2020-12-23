@@ -88,7 +88,7 @@ type IsiSnapshot struct {
 	ShadowBytes   int64   `json:"shadow_bytes"`
 	Size          int64   `json:"size"`
 	State         string  `json:"state"`
-	TargetId      int64   `json:"target_it"`
+	TargetId      int64   `json:"target_id"`
 	TargetName    string  `json:"target_name"`
 }
 
